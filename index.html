@@ -120,7 +120,7 @@
     const GID = "1045132400"; 
 
     async function fetchGviz(gid) {
-      const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl3H2Pcl4CQHcLOfVWkc0iZxPWXe6n6V8aFMSD3gw0N9kNnH4tBhjnvHqlS1Y25jUVqyD_bd20qPSb/gviz/tq?tqx=out:json&gid=${gid}';
+      const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTl3H2Pcl4CQHcLOfVWkc0iZxPWXe6n6V8aFMSD3gw0N9kNnH4tBhjnvHqlS1Y25jUVqyD_bd20qPSb/gviz/tq?tqx=out:json&gid=${gid}";
       const res = await fetch(url);
       const text = await res.text();
 
