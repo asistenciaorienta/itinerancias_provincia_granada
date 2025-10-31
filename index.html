@@ -72,7 +72,7 @@
         const todos = await resp.json();
 
         // Ignora las tres primeras filas y elimina filas vacías
-        const datos = todos.slice(3).filter(fila => Object.values(fila).some(v => v && v.trim() !== ""));
+        const datos = todos.filter(fila => Object.values(fila).some(v => v && v.trim() !== ""));
 
         // Filtra solo las columnas seleccionadas
         const datosFiltrados = datos.map(fila => {
@@ -116,6 +116,10 @@
     }
 
     cargarDatos();
+
+    const todos = await resp.json();
+    console.log(todos);
+    
   </script>
 </body>
 </html>
