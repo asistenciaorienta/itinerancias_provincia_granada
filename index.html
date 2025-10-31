@@ -111,21 +111,42 @@
     const res = await fetch(url);
     const text = await res.text();
 
-    // Dividir líneas y limpiar comillas
-    const lines = text.trim().split('\n').map(line => line.replace(/^"|"$/g, ''));
-    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+    // Expresión regular para dividir por comas solo si no están entre comillas
+    const parseCSV = (str) => {
+      const rows = str.trim().split(/\r?\n/);
+      return rows.map(row => {
+        const values = [];
+        let current = '';
+        let insideQuotes = false;
 
-    const data = lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.replace(/"/g, '').trim());
+        for (let i = 0; i < row.length; i++) {
+          const char = row[i];
+          if (char === '"') {
+            insideQuotes = !insideQuotes;
+          } else if (char === ',' && !insideQuotes) {
+            values.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        values.push(current.trim());
+        return values.map(v => v.replace(/^"|"$/g, '').trim());
+      });
+    };
+
+    const parsed = parseCSV(text);
+    const headers = parsed[0];
+    const data = parsed.slice(1).map(row => {
       const obj = {};
-      headers.forEach((h, i) => obj[h] = values[i] || "");
+      headers.forEach((h, i) => obj[h] = row[i] || "");
       return obj;
     });
 
     return data;
   }
 
-  const CSV_URL = "https://raw.githubusercontent.com/asistenciaorienta/itinerancias_provincia_granada/blob/main/itinerancias.csv";
+  const CSV_URL = "https://raw.githubusercontent.com/asistenciaorienta/itinerancias_provincia_granada/main/itinerancias.csv";
   const tableBody = document.querySelector('#data-table tbody');
   const searchInput = document.getElementById('search');
   let data = [];
@@ -142,9 +163,9 @@
       tr.innerHTML = `
         <td>${row.ENTIDAD}</td>
         <td>${row.MUNICIPIO}</td>
-        <td>${row.DÍAS}</td>
-        <td>${row.DIRECCIÓN}</td>
-        <td>${row.TELÉFONO}</td>
+        <td>${row["DÍAS"]}</td>
+        <td>${row["DIRECCIÓN"]}</td>
+        <td>${row["TELÉFONO"]}</td>
         <td>${row["TEC ORIENTA"]}</td>
         <td>${row.COLECTIVO}</td>
       `;
