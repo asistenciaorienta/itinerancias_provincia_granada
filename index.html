@@ -82,13 +82,25 @@
   </style>
 </head>
 <body>
-  <div class="contenedor">
-    <h2>🔍 Buscador de Itinerancias. Dirección Provincial del SAE en Granada. 2025-2026</h2>
-    <input type="text" id="busqueda" placeholder="Buscar por entidad, municipio o colectivo..." onkeyup="filtrar()">
+  <h1>Buscador de Itinerancias</h1>
+  <input type="text" id="search" placeholder="Buscar por entidad, municipio o colectivo...">
 
-    <table id="tabla">
-      <thead id="encabezado"></thead>
-      <tbody id="contenido"></tbody>
+  <div class="table-container">
+    <table id="data-table">
+      <thead>
+        <tr>
+          <th>ENTIDAD</th>
+          <th>MUNICIPIO</th>
+          <th>DÍAS</th>
+          <th>DIRECCIÓN</th>
+          <th>TELÉFONO</th>
+          <th>TEC ORIENTA</th>
+          <th>COLECTIVO</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="7" style="text-align:center;">Cargando datos...</td></tr>
+      </tbody>
     </table>
   </div>
 
