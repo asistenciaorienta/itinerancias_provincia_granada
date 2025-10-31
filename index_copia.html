@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Buscador de Itinerancias. Dirección Provincial del SAE en Granada. 2025-26</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 1rem;
+      background-color: #f6f8fa;
+    }
+
+    h1 {
+      text-align: center;
+      color: #0b6e4f;
+      margin-bottom: 1.5rem;
+    }
+    
+    h2 { color: #20603d; }
+    input { 
+      padding: 10px; 
+      width: 350px; 
+      margin-bottom: 15px; 
+      border: 1px solid #ccc; 
+      border-radius: 5px; 
+    }
+   #search {
+      display: block;
+      margin: 0 auto 1.5rem;
+      padding: 0.7rem 1rem;
+      width: 90%;
+      max-width: 500px;
+      border: 2px solid #0b6e4f;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      width: 100%;
+    }    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+      word-wrap: break-word;
+    }
+
+    th {
+      background-color: #0b6e4f;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tr:hover {
+      background-color: #f1f5f9;
+    }
+    tr:nth-child(even) { background-color: #f5f5f5; }
+    .contenedor {
+      max-width: 1200px;
+      margin: auto;
+    }
+    @media (max-width: 768px) {
+      table {
+        font-size: 0.9rem;
+      }
+
+      th, td {
+        padding: 0.5rem;
+      }    
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <h2>🔍 Buscador de Itinerancias. Dirección Provincial del SAE en Granada. 2025-2026</h2>
+    <input type="text" id="busqueda" placeholder="Buscar por entidad, municipio o colectivo..." onkeyup="filtrar()">
+
+    <table id="tabla">
+      <thead id="encabezado"></thead>
+      <tbody id="contenido"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const URL_HOJA = "https://opensheet.elk.sh/1h3vGz2L33Ibx09kq17cViQrsnhT5dSjKtXnfo6TtCTE/itinerancias25-26buscador";
+    let datosOriginales = [];
+
+    const COLUMNAS = [
+      "ENTIDAD",
+      "MUNICIPIO",
+      "DÍAS",
+      "DIRECCIÓN",
+      "TELÉFONO",
+      "TEC ORIENTA",
+      "COLECTIVO"
+    ];
+
+    async function cargarDatos() {
+      try {
+        const resp = await fetch(URL_HOJA);
+        const todos = await resp.json();
+
+        // Ignora las tres primeras filas y elimina filas vacías
+        const datos = todos.filter(fila => Object.values(fila).some(v => v && v.trim() !== ""));
+
+        // Filtra solo las columnas seleccionadas
+        const datosFiltrados = datos.map(fila => {
+          const obj = {};
+          COLUMNAS.forEach(col => obj[col] = fila[col] || "");
+          return obj;
+        });
+
+        datosOriginales = datosFiltrados;
+        mostrarDatos(datosFiltrados);
+      } catch (err) {
+        console.error("Error al cargar datos:", err);
+        document.getElementById('contenido').innerHTML = "<tr><td colspan='7'>Error al cargar los datos.</td></tr>";
+      }
+    }
+
+    function mostrarDatos(datos) {
+      const encabezado = document.getElementById('encabezado');
+      const contenido = document.getElementById('contenido');
+      encabezado.innerHTML = '';
+      contenido.innerHTML = '';
+
+      if (datos.length === 0) {
+        contenido.innerHTML = '<tr><td colspan="7">No se encontraron resultados</td></tr>';
+        return;
+      }
+
+      encabezado.innerHTML = '<tr>' + COLUMNAS.map(c => `<th>${c}</th>`).join('') + '</tr>';
+
+      contenido.innerHTML = datos.map(fila =>
+        '<tr>' + COLUMNAS.map(c => `<td>${fila[c] || ''}</td>`).join('') + '</tr>'
+      ).join('');
+    }
+
+    function filtrar() {
+      const texto = document.getElementById('busqueda').value.toLowerCase();
+      const filtrados = datosOriginales.filter(fila =>
+        Object.values(fila).some(v => v && v.toString().toLowerCase().includes(texto))
+      );
+      mostrarDatos(filtrados);
+    }
+
+    cargarDatos();
+
+    
+  </script>
+</body>
+</html>
