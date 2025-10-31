@@ -13,7 +13,7 @@
     h2 { color: #20603d; }
     input { 
       padding: 10px; 
-      width: 350px; 
+      width: 320px; 
       margin-bottom: 15px; 
       border: 1px solid #ccc; 
       border-radius: 5px; 
@@ -28,7 +28,6 @@
       border: 1px solid #ccc; 
       padding: 8px; 
       text-align: left; 
-      vertical-align: top;
     }
     th { 
       background-color: #e5f1e8; 
@@ -53,36 +52,18 @@
   </div>
 
   <script>
-    const URL_HOJA = "https://opensheet.elk.sh/1h3vGz2L33Ibx09kq17cViQrsnhT5dSjKtXnfo6TtCTE/Itinerancias_25-26_Buscador";
+    const URL_HOJA = "https://opensheet.elk.sh/1h3vGz2L33Ibx09kq17cViQrsnhT5dSjKtXnfo6TtCTE/Itinerancias%2025-26_Buscador";
     let datosOriginales = [];
-
-    const COLUMNAS = [
-      "ENTIDAD",
-      "MUNICIPIO",
-      "DÍAS",
-      "DIRECCIÓN",
-      "TELÉFONO",
-      "TEC ORIENTA",
-      "COLECTIVO"
-    ];
 
     async function cargarDatos() {
       try {
         const resp = await fetch(URL_HOJA);
         const todos = await resp.json();
 
-        // Ignora las tres primeras filas y elimina filas vacías
+        // Ignora las tres primeras filas y quita las vacías
         const datos = todos.slice(3).filter(fila => Object.values(fila).some(v => v && v.trim() !== ""));
-
-        // Filtra solo las columnas seleccionadas
-        const datosFiltrados = datos.map(fila => {
-          const obj = {};
-          COLUMNAS.forEach(col => obj[col] = fila[col] || "");
-          return obj;
-        });
-
-        datosOriginales = datosFiltrados;
-        mostrarDatos(datosFiltrados);
+        datosOriginales = datos;
+        mostrarDatos(datos);
       } catch (err) {
         console.error("Error al cargar datos:", err);
         document.getElementById('contenido').innerHTML = "<tr><td colspan='7'>Error al cargar los datos.</td></tr>";
@@ -100,10 +81,11 @@
         return;
       }
 
-      encabezado.innerHTML = '<tr>' + COLUMNAS.map(c => `<th>${c}</th>`).join('') + '</tr>';
+      const cols = Object.keys(datos[0]);
+      encabezado.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
 
       contenido.innerHTML = datos.map(fila =>
-        '<tr>' + COLUMNAS.map(c => `<td>${fila[c] || ''}</td>`).join('') + '</tr>'
+        '<tr>' + cols.map(c => `<td>${fila[c] || ''}</td>`).join('') + '</tr>'
       ).join('');
     }
 
@@ -119,4 +101,5 @@
   </script>
 </body>
 </html>
+
 
