@@ -116,79 +116,65 @@
     </table>
   </div>
 
-  <script>   
-    const GID = "1045132400"; 
+<script>
+  async function fetchCSV(url) {
+    const res = await fetch(url);
+    const text = await res.text();
 
-    async function fetchGviz(gid) {
-      const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vTl3H2Pcl4CQHcLOfVWkc0iZxPWXe6n6V8aFMSD3gw0N9kNnH4tBhjnvHqlS1Y25jUVqyD_bd20qPSb/gviz/tq?tqx=out:json&gid=${gid}`;
-      const res = await fetch(url);
-      const text = await res.text();
+    const rows = text.trim().split('\n').map(r => r.split(','));
+    const headers = rows.shift();
 
-      const jsonText = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
-      if (!jsonText) throw new Error('No se pudo procesar la respuesta de Google Sheets');
-      const data = JSON.parse(jsonText[1]);
-
-      const cols = data.table.cols.map(c => c.label || c.id);
-      const rows = data.table.rows.map(r => r.c.map(cell => (cell ? cell.v : "")));
-
-      const COLUMNS = ["ENTIDAD", "MUNICIPIO", "DÍAS", "DIRECCIÓN", "TELÉFONO", "TEC ORIENTA", "COLECTIVO"];
-      const indices = COLUMNS.map(c => cols.indexOf(c));
-
-      const result = rows.map(r => {
-        const obj = {};
-        COLUMNS.forEach((col, i) => {
-          const idx = indices[i];
-          obj[col] = idx >= 0 ? r[idx] : "";
-        });
-        return obj;
-      });
-
-      return result;
-    }
-
-    const tableBody = document.querySelector('#data-table tbody');
-    const searchInput = document.getElementById('search');
-    let data = [];
-
-    function renderTable(filteredData) {
-      tableBody.innerHTML = "";
-      if (filteredData.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Sin resultados</td></tr>`;
-        return;
-      }
-
-      filteredData.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.ENTIDAD}</td>
-          <td>${row.MUNICIPIO}</td>
-          <td>${row.DÍAS}</td>
-          <td>${row.DIRECCIÓN}</td>
-          <td>${row.TELÉFONO}</td>
-          <td>${row["TEC ORIENTA"]}</td>
-          <td>${row.COLECTIVO}</td>
-        `;
-        tableBody.appendChild(tr);
-      });
-    }
-
-    searchInput.addEventListener('input', e => {
-      const term = e.target.value.toLowerCase();
-      const filtered = data.filter(row =>
-        Object.values(row).some(v => v && v.toString().toLowerCase().includes(term))
-      );
-      renderTable(filtered);
+    return rows.map(r => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h.trim()] = r[i] ? r[i].trim() : "");
+      return obj;
     });
+  }
 
-    (async () => {
-      try {
-        data = await fetchGviz(GID);
-        renderTable(data);
-      } catch (error) {
-        console.error(error);
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Error al cargar los datos</td></tr>`;
-      }
-    })();
-  </script>
+  const tableBody = document.querySelector('#data-table tbody');
+  const searchInput = document.getElementById('search');
+  let data = [];
+
+  function renderTable(filteredData) {
+    tableBody.innerHTML = "";
+    if (filteredData.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Sin resultados</td></tr>`;
+      return;
+    }
+
+    filteredData.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${row.ENTIDAD}</td>
+        <td>${row.MUNICIPIO}</td>
+        <td>${row.DÍAS}</td>
+        <td>${row.DIRECCIÓN}</td>
+        <td>${row.TELÉFONO}</td>
+        <td>${row["TEC ORIENTA"]}</td>
+        <td>${row.COLECTIVO}</td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
+
+  searchInput.addEventListener('input', e => {
+    const term = e.target.value.toLowerCase();
+    const filtered = data.filter(row =>
+      Object.values(row).some(v => v && v.toString().toLowerCase().includes(term))
+    );
+    renderTable(filtered);
+  });
+
+  (async () => {
+    try {
+      const url = "https://tuusuario.github.io/tu-repositorio/data/itinerancias.csv";
+      data = await fetchCSV(url);
+      renderTable(data);
+    } catch (error) {
+      console.error(error);
+      tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Error al cargar los datos</td></tr>`;
+    }
+  })();
+</script>
 </body>
 </html>
