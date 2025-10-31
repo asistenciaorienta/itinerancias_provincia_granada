@@ -5,19 +5,31 @@
   <title>Buscador de Itinerancias. Dirección Provincial del SAE en Granada. 2025-26</title>
   <style>
     body {
-      font-family: "Segoe UI", Roboto, sans-serif;
       margin: 0;
       padding: 1rem;
       background-color: #f6f8fa;
     }
-
+    @font-face {
+      font-family: 'Montserrat';
+      src: url('fonts/Montserrat-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+    }
+    
+    @font-face {
+      font-family: 'Montserrat';
+      src: url('fonts/Montserrat-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+    }
     h1 {
       text-align: center;
-      color: #0b6e4f;
+      color: #087021;
       margin-bottom: 1.5rem;
     }
     
     h2 { color: #20603d; }
+    
     input { 
       padding: 10px; 
       width: 350px; 
@@ -56,7 +68,7 @@
     }
 
     th {
-      background-color: #0b6e4f;
+      background-color: #087021;
       color: white;
       position: sticky;
       top: 0;
@@ -105,71 +117,79 @@
   </div>
 
   <script>
-    const URL_HOJA = "https://opensheet.elk.sh/1h3vGz2L33Ibx09kq17cViQrsnhT5dSjKtXnfo6TtCTE/itinerancias25-26buscador";
-    let datosOriginales = [];
+    // 👇 Sustituye este valor por el gid real de tu pestaña
+    const GID = "1045132400"; 
 
-    const COLUMNAS = [
-      "ENTIDAD",
-      "MUNICIPIO",
-      "DÍAS",
-      "DIRECCIÓN",
-      "TELÉFONO",
-      "TEC ORIENTA",
-      "COLECTIVO"
-    ];
+    async function fetchGviz(gid) {
+      const url = `https://docs.google.com/spreadsheets/d/1h3vGz2L33Ibx09kq17cViQrsnhT5dSjKtXnfo6TtCTE/gviz/tq?gid=${gid}&tqx=out:json`;
+      const res = await fetch(url);
+      const text = await res.text();
 
-    async function cargarDatos() {
-      try {
-        const resp = await fetch(URL_HOJA);
-        const todos = await resp.json();
+      const jsonText = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
+      if (!jsonText) throw new Error('No se pudo procesar la respuesta de Google Sheets');
+      const data = JSON.parse(jsonText[1]);
 
-        // Ignora las tres primeras filas y elimina filas vacías
-        const datos = todos.filter(fila => Object.values(fila).some(v => v && v.trim() !== ""));
+      const cols = data.table.cols.map(c => c.label || c.id);
+      const rows = data.table.rows.map(r => r.c.map(cell => (cell ? cell.v : "")));
 
-        // Filtra solo las columnas seleccionadas
-        const datosFiltrados = datos.map(fila => {
-          const obj = {};
-          COLUMNAS.forEach(col => obj[col] = fila[col] || "");
-          return obj;
+      const COLUMNS = ["ENTIDAD", "MUNICIPIO", "DÍAS", "DIRECCIÓN", "TELÉFONO", "TEC ORIENTA", "COLECTIVO"];
+      const indices = COLUMNS.map(c => cols.indexOf(c));
+
+      const result = rows.map(r => {
+        const obj = {};
+        COLUMNS.forEach((col, i) => {
+          const idx = indices[i];
+          obj[col] = idx >= 0 ? r[idx] : "";
         });
+        return obj;
+      });
 
-        datosOriginales = datosFiltrados;
-        mostrarDatos(datosFiltrados);
-      } catch (err) {
-        console.error("Error al cargar datos:", err);
-        document.getElementById('contenido').innerHTML = "<tr><td colspan='7'>Error al cargar los datos.</td></tr>";
-      }
+      return result;
     }
 
-    function mostrarDatos(datos) {
-      const encabezado = document.getElementById('encabezado');
-      const contenido = document.getElementById('contenido');
-      encabezado.innerHTML = '';
-      contenido.innerHTML = '';
+    const tableBody = document.querySelector('#data-table tbody');
+    const searchInput = document.getElementById('search');
+    let data = [];
 
-      if (datos.length === 0) {
-        contenido.innerHTML = '<tr><td colspan="7">No se encontraron resultados</td></tr>';
+    function renderTable(filteredData) {
+      tableBody.innerHTML = "";
+      if (filteredData.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Sin resultados</td></tr>`;
         return;
       }
 
-      encabezado.innerHTML = '<tr>' + COLUMNAS.map(c => `<th>${c}</th>`).join('') + '</tr>';
-
-      contenido.innerHTML = datos.map(fila =>
-        '<tr>' + COLUMNAS.map(c => `<td>${fila[c] || ''}</td>`).join('') + '</tr>'
-      ).join('');
+      filteredData.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.ENTIDAD}</td>
+          <td>${row.MUNICIPIO}</td>
+          <td>${row.DÍAS}</td>
+          <td>${row.DIRECCIÓN}</td>
+          <td>${row.TELÉFONO}</td>
+          <td>${row["TEC ORIENTA"]}</td>
+          <td>${row.COLECTIVO}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
     }
 
-    function filtrar() {
-      const texto = document.getElementById('busqueda').value.toLowerCase();
-      const filtrados = datosOriginales.filter(fila =>
-        Object.values(fila).some(v => v && v.toString().toLowerCase().includes(texto))
+    searchInput.addEventListener('input', e => {
+      const term = e.target.value.toLowerCase();
+      const filtered = data.filter(row =>
+        Object.values(row).some(v => v && v.toString().toLowerCase().includes(term))
       );
-      mostrarDatos(filtrados);
-    }
+      renderTable(filtered);
+    });
 
-    cargarDatos();
-
-    
+    (async () => {
+      try {
+        data = await fetchGviz(GID);
+        renderTable(data);
+      } catch (error) {
+        console.error(error);
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Error al cargar los datos</td></tr>`;
+      }
+    })();
   </script>
 </body>
 </html>
