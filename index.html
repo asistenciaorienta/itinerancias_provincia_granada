@@ -61,17 +61,7 @@
 </head>
 <body>
   <h1>Buscador de Itinerancias</h1>
-  <div style="display:flex; justify-content:center; gap:10px; margin-bottom:1.5rem;">
-    <input type="text" id="search" placeholder="Buscar por entidad, municipio o colectivo..." 
-           style="padding:0.7rem 1rem; width:300px; border: 2px solid #0b6e4f; border-radius:8px; font-size:1rem;">
-    
-    <button id="btnBuscar"
-            onclick="buscar()" 
-            style="padding:0.7rem 1.2rem; background:#087021; color:white; border:none; border-radius:8px; font-size:1rem; cursor:pointer;">
-      Buscar
-    </button>
-  </div>
-
+  <input type="text" id="search" placeholder="Buscar..." oninput="debounceBuscar()">
   <div class="table-container">
     <table id="data-table">
       <thead>
@@ -228,8 +218,18 @@
 
     if (btn) btn.disabled = false;
   }
-
+  let debounceTimer;
+  function debounceBuscar() {
+    clearTimeout(debounceTimer);
+    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Cargando datos...</td></tr>`;
+    
+    debounceTimer = setTimeout(() => {
+      buscar();
+    }, 300);
+  }
   // cargar todo al inicio
+  document.addEventListener("DOMContentLoaded", buscar);
+
   buscar();
 </script>
 
