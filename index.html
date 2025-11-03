@@ -197,40 +197,29 @@
     if (allData.length === 0) {
       try {
         const res = await fetch("./itinerancias.json");
-        allData = await res.json();        
+        allData = await res.json();
+    
       } catch (err) {
         console.error("Error cargando itinerancias.json:", err);
         tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Error cargando datos</td></tr>`;
-        if (btn) btn.disabled = false;
         return;
       }
-
-      // cargar solo la primera vez
-      if (allData.length === 0) {
-        try {
-          const res = await fetch("./itinerancias.json");
-          allData = await res.json();
-      
-        } catch (err) {
-          console.error("Error cargando itinerancias.json:", err);
-          tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Error cargando datos</td></tr>`;
-          return;
+    
+      // mapeamos todas las filas a claves limpias
+      allDataMapped = allData.map(r => mapRow(r));
+    
+      // ORDENAR ya mapeado
+      allDataMapped.sort((a,b)=>{
+        if (a.municipio === b.municipio) {
+          return a.entidad.localeCompare(b.entidad);
         }
-      
-        // mapeamos todas las filas a claves limpias
-        allDataMapped = allData.map(r => mapRow(r));
-      
-        // ORDENAR ya mapeado
-        allDataMapped.sort((a,b)=>{
-          if (a.municipio === b.municipio) {
-            return a.entidad.localeCompare(b.entidad);
-          }
-          return a.municipio.localeCompare(b.municipio);
-        });
-      
-        // opcional: para depurar, mira la primera fila mapeada en consola
-        console.log("Ejemplo fila mapeada:", allDataMapped[0]);
-      }
+        return a.municipio.localeCompare(b.municipio);
+      });
+    
+      // opcional: para depurar, mira la primera fila mapeada en consola
+      console.log("Ejemplo fila mapeada:", allDataMapped[0]);
+    }
+    
 
     let datos;
     if (texto === "") {
