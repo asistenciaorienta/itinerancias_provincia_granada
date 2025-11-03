@@ -16,7 +16,14 @@
       display: flex;
       flex-direction: column;
     }
-
+    header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:1rem;
+      position:relative;
+    }
+    
     main {
       flex: 1; /* ocupa todo hasta el footer */
       display: flex;
@@ -27,10 +34,11 @@
     h1 {
       text-align: center;
       color: #087021;
-      margin-bottom: 2.0rem;
-      margin: 1rem;
+      margin: 0 0 0.5rem 0;
       font-size: 1.5rem;
       font-weight: 600;
+      flex:1;
+      text-align:center;
     }
     #search {
       display: block;
@@ -153,8 +161,8 @@
   <main>
     <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
       <img src="./SAE_Junta_de_Andalucia_Documentacion.png" alt="Logo SAE" style="height:50px;">
+      <h1>Buscador de Itinerancias. Programa Andalucía Orienta 2025-26</h1>
     </header>
-    <h1>Buscador de Itinerancias. Programa Andalucía Orienta 2025-26</h1>
     <input type="text" id="search" placeholder="Buscar..." oninput="debounceBuscar()">
     <!-- Encabezados fijos -->
     <div id="headers" class="headers-fijos" style="margin-top:10px;">
