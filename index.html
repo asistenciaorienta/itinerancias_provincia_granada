@@ -68,8 +68,10 @@
   }
   
   .datos-scroll {
-    max-height: none;   /* sin tope de altura */
-    overflow: visible;  /* sin scroll interno */
+    max-height: calc(100vh - 220px);  /* alt aprox: puedes ajustarla si quieres */
+    overflow-y: auto;                 /* scroll vertical en los datos */
+    overflow-x: hidden;
+    padding-bottom: 40px;
   }
   
   .fila {
