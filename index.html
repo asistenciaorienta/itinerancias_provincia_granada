@@ -119,15 +119,11 @@
 <body>
   <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
     <img src="./SAE_Junta_de_Andalucia_Documentacion.png" alt="Logo SAE" style="height:50px;">
-  
-    <div style="font-size:0.9rem; color:#087021; font-weight:600; text-align:right;">
-      Servicio de Intermediación e<br>
-      Inserción Laboral. SAE Granada
-    </div>
   </header>
   <h1>Buscador de Itinerancias. Programa Andalucía Orienta 2025-26</h1>
   <input type="text" id="search" placeholder="Buscar..." oninput="debounceBuscar()">
-  <div id="headers" class="headers-fijos">
+  <!-- Encabezados fijos -->
+  <div id="headers" class="headers-fijos" style="margin-top:10px;">
     <div>ENTIDAD</div>
     <div>MUNICIPIO</div>
     <div>DÍAS</div>
@@ -136,16 +132,14 @@
     <div>TECNIC@ ORIENTA</div>
     <div>COLECTIVO</div>
   </div>
-  
-  <div class="table-container">
-    <table id="data-table">
-      <tbody>
-        <tr><td colspan="7" style="text-align:center;">Cargando datos...</td></tr>
-      </tbody>
-    </table>
+  <!-- CONTENEDOR DE DATOS: aquí inyectamos filas .fila y aquí hace scroll -->
+  <div id="contenedor-datos" class="datos-scroll table-container" style="box-shadow:0 2px 8px rgba(0,0,0,.08); border-radius:0 0 10px 10px; margin-top:0;">
+    <!-- carga inicial -->
+    <div style="padding:1rem; text-align:center;">Cargando datos...</div>
   </div>
+  
   <footer style="position: relative; text-align: center; padding: 10px;">
-    © 2025 - Servicio Andaluz de Empleo. Junta de Andalucía
+    © 2025 - Servicio Andaluz de Empleo. Junta de Andalucía. Servicio de Intermediación e Inserción Laboral. SAE Granada
     <button class="contacto-btn" onclick="document.getElementById('modal-contacto').style.display='flex'">Contacto</button>
     <img src="Imagenes/vje2.png" 
          style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 25px;">
@@ -251,28 +245,37 @@
     const textoRaw = document.getElementById("search").value;
     const texto = normalizeString(textoRaw);
     const btn = document.getElementById("btnBuscar");
+    const cont = document.getElementById("contenedor-datos"); // nuestro contenedor principal
 
     // bloquear botón mientras carga
     if (btn) btn.disabled = true;
 
-    // mostrar cargando
-    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Cargando datos...</td></tr>`;
+    // mostrar cargando (en el contenedor)
+    if (cont) {
+      cont.innerHTML = `<div style="padding:1rem; text-align:center;">Cargando datos...</div>`;
+    } else if (tableBody) {
+      tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Cargando datos...</td></tr>`;
+    }
 
     // cargar solo la primera vez
     if (allData.length === 0) {
       try {
         const res = await fetch("./itinerancias.json");
         allData = await res.json();
-    
       } catch (err) {
         console.error("Error cargando itinerancias.json:", err);
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Error cargando datos</td></tr>`;
+        if (cont) {
+          cont.innerHTML = `<div style="padding:1rem; text-align:center;">Error cargando datos</div>`;
+        } else {
+          tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Error cargando datos</td></tr>`;
+        }
+        if (btn) btn.disabled = false;
         return;
       }
-    
+
       // mapeamos todas las filas a claves limpias
       allDataMapped = allData.map(r => mapRow(r));
-    
+
       // ORDENAR ya mapeado
       allDataMapped.sort((a,b)=>{
         if (a.municipio === b.municipio) {
@@ -280,11 +283,9 @@
         }
         return a.municipio.localeCompare(b.municipio);
       });
-    
-      // opcional: para depurar, mira la primera fila mapeada en consola
+
       console.log("Ejemplo fila mapeada:", allDataMapped[0]);
     }
-    
 
     let datos;
     if (texto === "") {
@@ -296,10 +297,12 @@
       });
     }
 
+    // renderiza usando tu función actual (que pone DIV.fila dentro de contenedor-datos)
     renderTable(datos);
 
     if (btn) btn.disabled = false;
   }
+
   let debounceTimer;
   function debounceBuscar() {
     clearTimeout(debounceTimer);
