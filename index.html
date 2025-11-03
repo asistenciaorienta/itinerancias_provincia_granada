@@ -60,7 +60,15 @@
   </style>
 </head>
 <body>
-  <h1>Buscador de Itinerancias</h1>
+  <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+    <img src="./SAE_Junta_de_Andalucia_Documentacion.png" alt="Logo SAE" style="height:50px;">
+  
+    <div style="font-size:0.9rem; color:#087021; font-weight:600; text-align:right;">
+      Servicio de Intermediación e<br>
+      Inserción Laboral. SAE Granada
+    </div>
+  </header>
+  <h1>Buscador de Itinerancias. Programa Andalucía Orienta 2025-26</h1>
   <input type="text" id="search" placeholder="Buscar..." oninput="debounceBuscar()">
   <div class="table-container">
     <table id="data-table">
@@ -190,6 +198,14 @@
       try {
         const res = await fetch("./itinerancias.json");
         allData = await res.json();
+        // ORDENAR por municipio y luego por entidad
+        allData.sort((a,b)=>{
+          if (a.municipio === b.municipio) {
+            return a.entidad.localeCompare(b.entidad);
+          }
+          return a.municipio.localeCompare(b.municipio);
+        });
+        
       } catch (err) {
         console.error("Error cargando itinerancias.json:", err);
         tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Error cargando datos</td></tr>`;
