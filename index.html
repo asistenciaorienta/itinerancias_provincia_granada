@@ -61,10 +61,16 @@
 </head>
 <body>
   <h1>Buscador de Itinerancias</h1>
-  <input type="text" id="search" placeholder="Buscar por entidad, municipio o colectivo...">
-  <button onclick="buscar()" style="margin:10px auto; display:block; padding:0.6rem 1.2rem; background:#087021; color:white; border:none; border-radius:6px; font-size:1rem; cursor:pointer;">
-    Buscar
-  </button>
+  <div style="display:flex; justify-content:center; gap:10px; margin-bottom:1.5rem;">
+    <input type="text" id="search" placeholder="Buscar por entidad, municipio o colectivo..." 
+           style="padding:0.7rem 1rem; width:300px; border: 2px solid #0b6e4f; border-radius:8px; font-size:1rem;">
+    
+    <button id="btnBuscar"
+            onclick="buscar()" 
+            style="padding:0.7rem 1.2rem; background:#087021; color:white; border:none; border-radius:8px; font-size:1rem; cursor:pointer;">
+      Buscar
+    </button>
+  </div>
 
   <div class="table-container">
     <table id="data-table">
@@ -90,13 +96,25 @@
 
   async function buscar() {
     const texto = document.getElementById("search").value;
+    const btn = document.getElementById("btnBuscar");
+  
+    // bloquear botón mientras carga
+    btn.disabled = true;
+  
+    // mostrar cargando
+    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Cargando datos...</td></tr>`;
+  
     const url = `https://script.google.com/macros/s/AKfycbybv-GY5cOReD-fJ79WrrWd6jWBSj-1HGSAm0BFmAlMPnfTcru9RblNB4rkOxuIpsTv/exec?searchText=${encodeURIComponent(texto)}`;
     const res = await fetch(url);
     const datos = await res.json();
   
     renderTable(datos);
+  
+    // reactivar botón
+    btn.disabled = false;
   }
 
+  
   function renderTable(filteredData) {
     tableBody.innerHTML = "";
     if (filteredData.length === 0) {
