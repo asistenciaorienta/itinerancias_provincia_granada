@@ -61,7 +61,10 @@
 </head>
 <body>
   <h1>Buscador de Itinerancias</h1>
-  <input type="text" id="search" placeholder="Buscar por entidad, municipio o colectivo..." oninput="buscar()">
+  <input type="text" id="search" placeholder="Buscar por entidad, municipio o colectivo...">
+  <button onclick="buscar()" style="margin:10px auto; display:block; padding:0.6rem 1.2rem; background:#087021; color:white; border:none; border-radius:6px; font-size:1rem; cursor:pointer;">
+    Buscar
+  </button>
 
   <div class="table-container">
     <table id="data-table">
