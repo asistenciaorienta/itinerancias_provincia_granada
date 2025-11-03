@@ -61,7 +61,7 @@
 </head>
 <body>
   <h1>Buscador de Itinerancias</h1>
-  <input type="text" id="search" placeholder="Buscar por entidad, municipio o colectivo...">
+  <input type="text" id="search" placeholder="Buscar por entidad, municipio o colectivo..." oninput="buscar()">
 
   <div class="table-container">
     <table id="data-table">
@@ -83,22 +83,16 @@
   </div>
 
 <script>
-  async function fetchCSV(url) {
+  async function buscar() {
+    const texto = document.getElementById("search").value;
+    const url = `https://script.google.com/macros/s/AKfycbwdXtf1pa7HwicMP350M8yZ7zRVqdWDzC500hRhUaKJm3K7hwvLiFSwUmqTbQbSQUo/exec?searchText=${encodeURIComponent(texto)}`;
+  
     const res = await fetch(url);
-    const text = await res.text();
-
-    const lines = text.trim().split('\n').map(line => line.replace(/\r/g, ''));
-    const headers = lines[0].split('\t').map(h => h.replace(/(^"|"$)/g, '').trim());
-
-    const data = lines.slice(1).map(line => {
-      const values = line.split('\t').map(v => v.replace(/(^"|"$)/g, '').trim());
-      const obj = {};
-      headers.forEach((h, i) => obj[h] = values[i] || "");
-      return obj;
-    });
-
-    return data;
+    const datos = await res.json();
+  
+    renderTable(datos);
   }
+
 
   const CSV_URL = "https://asistenciaorienta.github.io/itinerancias_provincia_granada/itinerancias.csv";
   const tableBody = document.querySelector('#data-table tbody');
