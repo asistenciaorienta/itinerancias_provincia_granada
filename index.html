@@ -87,8 +87,7 @@
 
   async function buscar() {
     const texto = document.getElementById("search").value;
-    const url = `https://script.google.com/macros/s/AKfycbwdXtf1pa7HwicMP350M8yZ7zRVqdWDzC500hRhUaKJm3K7hwvLiFSwUmqTbQbSQUo/exec?searchText=${encodeURIComponent(texto)}`;
-  
+    const url = `https://script.google.com/macros/s/AKfycbxuilEeSqteSUs_JeabfQS-5GTLa-Via2mL4JqHyn-54aoNB3OI-QCQLcDODo9_8auU/exec?searchText=${encodeURIComponent(texto)}`;
     const res = await fetch(url);
     const datos = await res.json();
   
