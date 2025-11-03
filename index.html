@@ -198,7 +198,7 @@
     // cargar solo la primera vez
     if (allData.length === 0) {
       try {
-        const res = await fetch("./data/itinerancias.json");
+        const res = await fetch("./itinerancias.json");
         allData = await res.json();
       } catch (err) {
         console.error("Error cargando itinerancias.json:", err);
