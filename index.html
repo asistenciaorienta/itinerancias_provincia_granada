@@ -68,11 +68,21 @@
   }
   
   .datos-scroll {
-    max-height: calc(100vh - 220px);  /* alt aprox: puedes ajustarla si quieres */
-    overflow-y: auto;                 /* scroll vertical en los datos */
+    /* este contenedor es el que tendrá el scroll */
+    overflow-y: auto;
     overflow-x: hidden;
-    padding-bottom: 40px;
+  
+    /* este alto deja siempre a la vista:
+       - header
+       - título
+       - buscador
+       - fila de encabezados
+       y deja hueco para el footer fijo */
+    max-height: calc(100vh - 280px);
+  
+    padding-bottom: 50px; /* para que la última fila no choque con el footer */
   }
+
   
   .fila {
     display: grid;
