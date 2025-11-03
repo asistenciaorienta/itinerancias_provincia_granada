@@ -83,6 +83,8 @@
   </div>
 
 <script>
+  const tableBody = document.querySelector('#data-table tbody');
+
   async function buscar() {
     const texto = document.getElementById("search").value;
     const url = `https://script.google.com/macros/s/AKfycbwdXtf1pa7HwicMP350M8yZ7zRVqdWDzC500hRhUaKJm3K7hwvLiFSwUmqTbQbSQUo/exec?searchText=${encodeURIComponent(texto)}`;
@@ -92,12 +94,6 @@
   
     renderTable(datos);
   }
-
-
-  const CSV_URL = "https://asistenciaorienta.github.io/itinerancias_provincia_granada/itinerancias.csv";
-  const tableBody = document.querySelector('#data-table tbody');
-  const searchInput = document.getElementById('search');
-  let data = [];
 
   function renderTable(filteredData) {
     tableBody.innerHTML = "";
@@ -121,24 +117,10 @@
     });
   }
 
-  searchInput.addEventListener('input', e => {
-    const term = e.target.value.toLowerCase();
-    const filtered = data.filter(row =>
-      Object.values(row).some(v => v && v.toString().toLowerCase().includes(term))
-    );
-    renderTable(filtered);
-  });
-
-  (async () => {
-    try {
-      data = await fetchCSV(CSV_URL);
-      renderTable(data);
-    } catch (error) {
-      console.error(error);
-      tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Error al cargar los datos</td></tr>`;
-    }
-  })();
+  // cargar sin buscar
+  buscar();
 </script>
+
 </body>
 </html>
 
