@@ -5,12 +5,22 @@
   <title>Buscador de Itinerancias. SAE Granada 2025-26</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
+    html, body {
+      height: 100%;
+    }
     body {
       margin: 0;
       padding: 1rem;
       background-color: #f6f8fa;
       font-family: 'Poppins', sans-serif;
+      display: flex;
+      flex-direction: column;
     }
+
+    main {
+      flex: 1; /* obliga a este bloque a ocupar lo que queda */
+    }
+   
     h1 {
       text-align: center;
       color: #087021;
@@ -83,7 +93,6 @@
     padding-bottom: 50px; /* para que la última fila no choque con el footer */
   }
 
-  
   .fila {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -129,33 +138,34 @@
   </style>
 </head>
 <body>
-  <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
-    <img src="./SAE_Junta_de_Andalucia_Documentacion.png" alt="Logo SAE" style="height:50px;">
-  </header>
-  <h1>Buscador de Itinerancias. Programa Andalucía Orienta 2025-26</h1>
-  <input type="text" id="search" placeholder="Buscar..." oninput="debounceBuscar()">
-  <!-- Encabezados fijos -->
-  <div id="headers" class="headers-fijos" style="margin-top:10px;">
-    <div>ENTIDAD</div>
-    <div>MUNICIPIO</div>
-    <div>DÍAS</div>
-    <div>DIRECCIÓN</div>
-    <div>TELÉFONO</div>
-    <div>TECNIC@ ORIENTA</div>
-    <div>COLECTIVO</div>
-  </div>
-  <!-- CONTENEDOR DE DATOS: aquí inyectamos filas .fila y aquí hace scroll -->
-  <div id="contenedor-datos" class="datos-scroll" style="box-shadow:0 2px 8px rgba(0,0,0,.08); border-radius:0 0 10px 10px; margin-top:0;">
-    <!-- carga inicial -->
-    <div style="padding:1rem; text-align:center;">Cargando datos...</div>
-  </div>
-  
+  <main>
+    <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+      <img src="./SAE_Junta_de_Andalucia_Documentacion.png" alt="Logo SAE" style="height:50px;">
+    </header>
+    <h1>Buscador de Itinerancias. Programa Andalucía Orienta 2025-26</h1>
+    <input type="text" id="search" placeholder="Buscar..." oninput="debounceBuscar()">
+    <!-- Encabezados fijos -->
+    <div id="headers" class="headers-fijos" style="margin-top:10px;">
+      <div>ENTIDAD</div>
+      <div>MUNICIPIO</div>
+      <div>DÍAS</div>
+      <div>DIRECCIÓN</div>
+      <div>TELÉFONO</div>
+      <div>TECNIC@ ORIENTA</div>
+      <div>COLECTIVO</div>
+    </div>
+    <!-- CONTENEDOR DE DATOS: aquí inyectamos filas .fila y aquí hace scroll -->
+    <div id="contenedor-datos" class="datos-scroll" style="box-shadow:0 2px 8px rgba(0,0,0,.08); border-radius:0 0 10px 10px; margin-top:0;">
+      <!-- carga inicial -->
+      <div style="padding:1rem; text-align:center;">Cargando datos...</div>
+    </div>
+  </main>
   <footer style="position: relative; text-align: center; padding: 10px;">
     © 2025 - Servicio Andaluz de Empleo. Junta de Andalucía. Servicio de Intermediación e Inserción Laboral. SAE Granada
     <button class="contacto-btn" onclick="document.getElementById('modal-contacto').style.display='flex'">Contacto</button>
     <img src="vje2.png" 
          style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 25px;">
-  </footer>
+  </footer>  
 <script>
   let allData = [];        // datos originales sin mapear
   let allDataMapped = [];  // datos ya mapeados con claves limpias
