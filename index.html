@@ -92,37 +92,78 @@
   </div>
 
 <script>
-  let allData = [];
   const tableBody = document.querySelector('#data-table tbody');
+  let allData = [];        // datos originales sin mapear
+  let allDataMapped = [];  // datos ya mapeados con claves limpias
 
-  async function buscar() {
-    const texto = document.getElementById("search").value.toLowerCase();
-  
-    // cargando...
-    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Cargando datos...</td></tr>`;
-  
-    // si no está cargado todavía -> cargamos del json local
-    if (allData.length === 0) {
-      const res = await fetch("./itinerancias.json");
-      allData = await res.json();
-    }
-  
-    let datos;
-  
-    if (texto === "") {
-      datos = allData;
-    } else {
-      datos = allData.filter(r =>
-        (r.ENTIDAD + " " + r.MUNICIPIO + " " + r.COLECTIVO).toLowerCase().includes(texto)
-      );
-    }
-  
-    renderTable(datos);
+  // Normaliza texto: quita tildes, pasa a minúsculas, elimina espacios extra y símbolos no alfanuméricos
+  function normalizeString(s) {
+    return (s || "")
+      .toString()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^\w\s]/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
   }
- 
+
+  // normaliza claves (para comparar cabeceras)
+  function normalizeKey(k) {
+    return normalizeString(k).replace(/\s+/g, ""); // sin espacios
+  }
+
+  // lista de alias posibles para cada campo (normalizados)
+  const ALIAS = {
+    entidad: ["entidad", "nombreentidad", "nombre", "organizacion", "organización"],
+    municipio: ["municipio", "poblacion", "localidad"],
+    dias: ["dias", "días", "periodo", "horario"],
+    direccion: ["direccion", "dirección", "domicilio", "lugar"],
+    telf: ["telefono", "tel", "telefono citas", "teléfono", "telefono citas", "teléfono citas"],
+    tecnico: ["tecnicoorienta", "tecorienta", "tec orienta", "tecnic@ orienta", "tecnic@orienta", "tecnico", "responsable"],
+    colectivo: ["colectivo", "publico", "dirigidoa", "dirigido a"]
+  };
+
+  // intenta obtener valor de la fila según aliases; row es el objeto tal cual viene del JSON
+  function pickField(row, aliasesList) {
+    const keys = Object.keys(row);
+    for (const k of keys) {
+      const nk = normalizeKey(k);
+      for (const a of aliasesList) {
+        if (nk === normalizeKey(a)) {
+          return row[k];
+        }
+      }
+    }
+    // si no encontramos, intentamos búsqueda parcial (ej: 'telefono' dentro de 'telefono citas')
+    for (const k of keys) {
+      const nk = normalizeKey(k);
+      for (const a of aliasesList) {
+        if (nk.includes(normalizeKey(a))) {
+          return row[k];
+        }
+      }
+    }
+    return ""; // fallback
+  }
+
+  // mapea una fila del JSON a las claves limpias que usarás en la UI
+  function mapRow(row) {
+    return {
+      entidad: pickField(row, ALIAS.entidad) || "",
+      municipio: pickField(row, ALIAS.municipio) || "",
+      dias: pickField(row, ALIAS.dias) || "",
+      direccion: pickField(row, ALIAS.direccion) || "",
+      telf: pickField(row, ALIAS.telf) || "",
+      tecnico: pickField(row, ALIAS.tecnico) || "",
+      colectivo: pickField(row, ALIAS.colectivo) || ""
+    };
+  }
+
+  // render table usando las claves limpias
   function renderTable(filteredData) {
     tableBody.innerHTML = "";
-    if (filteredData.length === 0) {
+    if (!filteredData || filteredData.length === 0) {
       tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Sin resultados</td></tr>`;
       return;
     }
@@ -130,21 +171,68 @@
     filteredData.forEach(row => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${row.entidad}</td>
-        <td>${row.municipio}</td>
-        <td>${row.dias}</td>
-        <td>${row.direccion}</td>
-        <td>${row.telf}</td>
-        <td>${row.tecnico}</td>
-        <td>${row.colectivo}</td>
+        <td>${row.entidad || ""}</td>
+        <td>${row.municipio || ""}</td>
+        <td>${row.dias || ""}</td>
+        <td>${row.direccion || ""}</td>
+        <td>${row.telf || ""}</td>
+        <td>${row.tecnico || ""}</td>
+        <td>${row.colectivo || ""}</td>
       `;
       tableBody.appendChild(tr);
     });
   }
 
-  // cargar sin buscar
+  // función buscar: carga JSON local solo una vez, mapea filas y filtra
+  async function buscar() {
+    const textoRaw = document.getElementById("search").value;
+    const texto = normalizeString(textoRaw);
+    const btn = document.getElementById("btnBuscar");
+
+    // bloquear botón mientras carga
+    if (btn) btn.disabled = true;
+
+    // mostrar cargando
+    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Cargando datos...</td></tr>`;
+
+    // cargar solo la primera vez
+    if (allData.length === 0) {
+      try {
+        const res = await fetch("./data/itinerancias.json");
+        allData = await res.json();
+      } catch (err) {
+        console.error("Error cargando itinerancias.json:", err);
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Error cargando datos</td></tr>`;
+        if (btn) btn.disabled = false;
+        return;
+      }
+
+      // mapeamos todas las filas a claves limpias
+      allDataMapped = allData.map(r => mapRow(r));
+
+      // opcional: para depurar, mira la primera fila mapeada en consola
+      console.log("Ejemplo fila mapeada:", allDataMapped[0]);
+    }
+
+    let datos;
+    if (texto === "") {
+      datos = allDataMapped;
+    } else {
+      datos = allDataMapped.filter(r => {
+        const cadena = normalizeString(`${r.entidad} ${r.municipio} ${r.colectivo}`);
+        return cadena.includes(texto);
+      });
+    }
+
+    renderTable(datos);
+
+    if (btn) btn.disabled = false;
+  }
+
+  // cargar todo al inicio
   buscar();
 </script>
+
 
 </body>
 </html>
