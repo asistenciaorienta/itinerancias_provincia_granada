@@ -104,13 +104,13 @@
     filteredData.forEach(row => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${row.ENTIDAD}</td>
-        <td>${row.MUNICIPIO}</td>
-        <td>${row.DÍAS}</td>
-        <td>${row.DIRECCIÓN}</td>
-        <td>${row.TELÉFONO}</td>
-        <td>${row["TEC ORIENTA"]}</td>
-        <td>${row.COLECTIVO}</td>
+        <td>${row.entidad}</td>
+        <td>${row.municipio}</td>
+        <td>${row.dias}</td>
+        <td>${row.direccion}</td>
+        <td>${row.telf}</td>
+        <td>${row.tecnico}</td>
+        <td>${row.colectivo}</td>
       `;
       tableBody.appendChild(tr);
     });
