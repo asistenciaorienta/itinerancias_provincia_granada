@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Buscador de Itinerancias. SAE Granada 2025-26</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      margin: 0;
+      background-color: #f6f8fa;
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:1rem;
+      position:relative;
+      height:50px;
+    }
+    
+    main {
+      flex: 1; /* ocupa todo hasta el footer */
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;  /* ← el padding que antes tenía body */
+    }
+   
+    h1 {
+      text-align: center;
+      color: #087021;
+      margin: 0 0 0.5rem 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      flex:1;
+      text-align:center;
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      white-space:nowrap;     
+    }
+    #search {
+      display: block;
+      margin: 0 auto 1.5rem;
+      padding: 0.7rem 1rem;
+      width: 90%;
+      max-width: 500px;
+      border: 2px solid #0b6e4f;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    .table-container {
+      overflow-x: auto;
+      overflow-y: auto;
+      width: 100%;
+      max-height: 80vh; /* por ejemplo */
+    }        
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+      word-wrap: break-word;
+    }
+    th {
+      background-color: #087021;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      border-bottom: 3px solid #065a19; /* opcional */
+    }  
+    tr:hover { background-color: #f1f5f9; }
+    tr:nth-child(even) { background-color: #f5f5f5; }
+    
+  .headers-fijos {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background-color:#087021;
+    color:white;
+    font-weight:600;
+    padding:8px;
+    border-bottom:3px solid #065a19;
+  }
+  
+  .datos-scroll {
+    /* este contenedor es el que tendrá el scroll */
+    overflow-y: auto;
+    overflow-x: hidden;
+  
+    /* este alto deja siempre a la vista:
+       - header
+       - título
+       - buscador
+       - fila de encabezados
+       y deja hueco para el footer fijo */
+    max-height: calc(100vh - 280px);
+  
+    padding-bottom: 50px; /* para que la última fila no choque con el footer */
+  }
+
+  .fila {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding:8px;
+    border-bottom:1px solid #e5e7eb;
+  }
+  
+  .fila:nth-child(even) { background:#f5f5f5; }
+  .fila:hover { background:#f1f5f9; }
+    
+    @media (max-width: 768px) {
+      table { font-size: 0.9rem; }
+      th, td { padding: 0.5rem; }
+    }
+    footer {
+      background-color: #555555;
+      color: #ffffff;
+      text-align: center;
+      padding: 1rem 1rem;
+      margin-top: auto;
+      font-size: 1rem;
+      width: 100%;
+      align-self: stretch; /* asegura que el flex hijo se estire */
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      z-index: 990; /* detrás del contenido */
+    }   
+    footer .contacto-btn {
+      margin-left: 1rem;
+      background-color: #e9d87c;
+      color: #333;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }    
+    footer .contacto-btn:hover {
+      background-color: #d8c56a;
+    }    
+    #contenedor-datos {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-bottom: 20px;
+    }    
+    /* MODAL CONTACTO */
+    #modal-contacto {
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.45);
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+    }
+    
+    #modal-contacto .modal-box {
+      background:white;
+      padding:2rem;
+      border-radius:10px;
+      box-shadow:0 4px 16px rgba(0,0,0,.25);
+      width:90%;
+      max-width:400px;
+      text-align:center;
+    }
+    
+    #modal-contacto .modal-box h2 {
+      margin-top:0;
+      color:#087021;
+      font-size:1.2rem;
+    }
+    
+    #modal-contacto .cerrar-btn {
+      margin-top:1.2rem;
+      background:#087021;
+      color:white;
+      border:none;
+      padding:.6rem 1.2rem;
+      border-radius:6px;
+      font-weight:600;
+      cursor:pointer;
+    }
+    
+  </style>
+</head>
+<body>
+  <main>
+    <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+      <img src="./SAE_Junta_de_Andalucia_Documentacion.png" alt="Logo SAE" style="height:50px;">
+      <h1>Buscador de Itinerancias. Programa Andalucía Orienta 2025-26</h1>
+    </header>
+    <input type="text" id="search" placeholder="Buscar..." oninput="debounceBuscar()">
+    <!-- Encabezados fijos -->
+    <div id="headers" class="headers-fijos" style="margin-top:10px;">
+      <div>ENTIDAD</div>
+      <div>MUNICIPIO</div>
+      <div>DÍAS</div>
+      <div>DIRECCIÓN</div>
+      <div>TELÉFONO</div>
+      <div>TECNIC@ ORIENTA</div>
+      <div>COLECTIVO</div>
+    </div>
+    <!-- CONTENEDOR DE DATOS: aquí inyectamos filas .fila y aquí hace scroll -->
+    <div id="contenedor-datos" class="datos-scroll" style="box-shadow:0 2px 8px rgba(0,0,0,.08); border-radius:0 0 10px 10px; margin-top:0;">
+      <!-- carga inicial -->
+      <div style="padding:1rem; text-align:center;">Cargando datos...</div>
+    </div>
+  </main>
+  <footer>
+    © 2025 - Servicio Andaluz de Empleo. Junta de Andalucía. Servicio de Intermediación e Inserción Laboral de Granada.
+    <button class="contacto-btn" onclick="abrirModalContacto()">Contacto</button>
+    <img src="vje2.png" 
+         style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 25px;">
+  </footer>  
+
+  <!-- MODAL CONTACTO -->
+  <div id="modal-contacto">
+    <div class="modal-box">
+      <h2>Contacto</h2>
+      <p style="margin:.8rem 0;font-size:1.05rem;">
+        Para cualquier consulta con el Servicio de Intermediación e Inserción Laboral:
+        <br><br>
+        <a href="mailto:orientacion.gr.sae@juntadeandalucia.es">
+          orientacion.gr.sae@juntadeandalucia.es
+        </a>
+      </p>
+      <button class="cerrar-btn" onclick="cerrarModalContacto()">Cerrar</button>
+    </div>
+  </div>
+  
+<script>
+    // cierre al pinchar fuera
+    document.getElementById('modal-contacto').addEventListener('click', e => {
+      if (e.target.id === 'modal-contacto') {
+        cerrarModalContacto();
+      }
+    });  
+    // cierre al botón cerrar
+    document.querySelector('#modal-contacto .cerrar-btn').addEventListener('click', ()=>{
+      document.getElementById('modal-contacto').style.display='none';
+    });
+   function abrirModalContacto() {
+      document.getElementById('modal-contacto').style.display = 'flex';
+      document.body.style.overflow = 'hidden';  // bloquea scroll del fondo
+    }
+    
+    function cerrarModalContacto() {
+      document.getElementById('modal-contacto').style.display = 'none';
+      document.body.style.overflow = 'auto';   // restaura scroll
+    }
+
+  let allData = [];        // datos originales sin mapear
+  let allDataMapped = [];  // datos ya mapeados con claves limpias
+
+  // Normaliza texto: quita tildes, pasa a minúsculas, elimina espacios extra y símbolos no alfanuméricos
+  function normalizeString(s) {
+    return (s || "")
+      .toString()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^\w\s]/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  // normaliza claves (para comparar cabeceras)
+  function normalizeKey(k) {
+    return normalizeString(k).replace(/\s+/g, ""); // sin espacios
+  }
+
+  // lista de alias posibles para cada campo (normalizados)
+  const ALIAS = {
+    entidad: ["entidad", "nombreentidad", "nombre", "organizacion", "organización"],
+    municipio: ["municipio", "poblacion", "localidad"],
+    dias: ["dias", "días", "periodo", "horario"],
+    direccion: ["direccion", "dirección", "domicilio", "lugar"],
+    telf: ["telefono", "tel", "telefono citas", "teléfono", "telefono citas", "teléfono citas"],
+    tecnico: ["tecnicoorienta", "tecorienta", "tec orienta", "tecnic@ orienta", "tecnic@orienta", "tecnico", "responsable"],
+    colectivo: ["colectivo", "publico", "dirigidoa", "dirigido a"]
+  };
+
+  // intenta obtener valor de la fila según aliases; row es el objeto tal cual viene del JSON
+  function pickField(row, aliasesList) {
+    const keys = Object.keys(row);
+    for (const k of keys) {
+      const nk = normalizeKey(k);
+      for (const a of aliasesList) {
+        if (nk === normalizeKey(a)) {
+          return row[k];
+        }
+      }
+    }
+    // si no encontramos, intentamos búsqueda parcial (ej: 'telefono' dentro de 'telefono citas')
+    for (const k of keys) {
+      const nk = normalizeKey(k);
+      for (const a of aliasesList) {
+        if (nk.includes(normalizeKey(a))) {
+          return row[k];
+        }
+      }
+    }
+    return ""; // fallback
+  }
+
+  // mapea una fila del JSON a las claves limpias que usarás en la UI
+  function mapRow(row) {
+    return {
+      entidad: pickField(row, ALIAS.entidad) || "",
+      municipio: pickField(row, ALIAS.municipio) || "",
+      dias: pickField(row, ALIAS.dias) || "",
+      direccion: pickField(row, ALIAS.direccion) || "",
+      telf: pickField(row, ALIAS.telf) || "",
+      tecnico: pickField(row, ALIAS.tecnico) || "",
+      colectivo: pickField(row, ALIAS.colectivo) || ""
+    };
+  }
+
+  // render table usando las claves limpias
+  function renderTable(filteredData) {
+    const cont = document.getElementById("contenedor-datos");
+    cont.innerHTML = "";
+    
+    if (!filteredData || filteredData.length === 0) {
+      cont.innerHTML = `<div style="padding:1rem;text-align:center;">Sin resultados</div>`;
+      return;
+    }
+  
+    filteredData.forEach(r => {
+      const fila = document.createElement("div");
+      fila.className = "fila";
+      fila.innerHTML = `
+        <div>${r.entidad || ""}</div>
+        <div>${r.municipio || ""}</div>
+        <div>${r.dias || ""}</div>
+        <div>${r.direccion || ""}</div>
+        <div>${r.telf || ""}</div>
+        <div>${r.tecnico || ""}</div>
+        <div>${r.colectivo || ""}</div>
+      `;
+      cont.appendChild(fila);
+    });
+  }
+
+
+  // función buscar: carga JSON local solo una vez, mapea filas y filtra
+  async function buscar() {
+    const textoRaw = document.getElementById("search").value;
+    const texto = normalizeString(textoRaw);
+    const btn = document.getElementById("btnBuscar");
+    const cont = document.getElementById("contenedor-datos"); // nuestro contenedor principal
+
+    // bloquear botón mientras carga
+    if (btn) btn.disabled = true;
+
+    // mostrar cargando (en el contenedor)
+    if (cont) {
+      cont.innerHTML = `<div style="padding:1rem; text-align:center;">Cargando datos...</div>`;
+    } else if (tableBody) {
+      tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Cargando datos...</td></tr>`;
+    }
+
+    // cargar solo la primera vez
+    if (allData.length === 0) {
+      try {
+        const res = await fetch("./itinerancias.json");
+        allData = await res.json();
+      } catch (err) {
+        console.error("Error cargando itinerancias.json:", err);
+        if (cont) {
+          cont.innerHTML = `<div style="padding:1rem; text-align:center;">Error cargando datos</div>`;
+        } else {
+          tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Error cargando datos</td></tr>`;
+        }
+        if (btn) btn.disabled = false;
+        return;
+      }
+
+      // mapeamos todas las filas a claves limpias
+      allDataMapped = allData.map(r => mapRow(r));
+
+      // ORDENAR ya mapeado
+      allDataMapped.sort((a,b)=>{
+        if (a.municipio === b.municipio) {
+          return a.entidad.localeCompare(b.entidad);
+        }
+        return a.municipio.localeCompare(b.municipio);
+      });
+
+      console.log("Ejemplo fila mapeada:", allDataMapped[0]);
+    }
+
+    let datos;
+    if (texto === "") {
+      datos = allDataMapped;
+    } else {
+      datos = allDataMapped.filter(r => {
+        const cadena = normalizeString(`${r.entidad} ${r.municipio} ${r.colectivo}`);
+        return cadena.includes(texto);
+      });
+    }
+
+    // renderiza usando tu función actual (que pone DIV.fila dentro de contenedor-datos)
+    renderTable(datos);
+
+    if (btn) btn.disabled = false;
+  }
+
+  let debounceTimer;
+  function debounceBuscar() {
+    clearTimeout(debounceTimer);    
+    debounceTimer = setTimeout(() => {
+      buscar();
+    }, 300);
+  }
+  // cargar todo al inicio
+  document.addEventListener("DOMContentLoaded", buscar);
+
+  buscar();
+</script>
+
+
+</body>
+</html>
