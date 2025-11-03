@@ -92,29 +92,34 @@
   </div>
 
 <script>
+  let allData = [];
   const tableBody = document.querySelector('#data-table tbody');
 
   async function buscar() {
-    const texto = document.getElementById("search").value;
-    const btn = document.getElementById("btnBuscar");
+    const texto = document.getElementById("search").value.toLowerCase();
   
-    // bloquear botón mientras carga
-    btn.disabled = true;
-  
-    // mostrar cargando
+    // cargando...
     tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Cargando datos...</td></tr>`;
   
-    const url = `https://script.google.com/macros/s/AKfycbybv-GY5cOReD-fJ79WrrWd6jWBSj-1HGSAm0BFmAlMPnfTcru9RblNB4rkOxuIpsTv/exec?searchText=${encodeURIComponent(texto)}`;
-    const res = await fetch(url);
-    const datos = await res.json();
+    // si no está cargado todavía -> cargamos del json local
+    if (allData.length === 0) {
+      const res = await fetch("./data/itinerancias.json");
+      allData = await res.json();
+    }
+  
+    let datos;
+  
+    if (texto === "") {
+      datos = allData;
+    } else {
+      datos = allData.filter(r =>
+        (r.ENTIDAD + " " + r.MUNICIPIO + " " + r.COLECTIVO).toLowerCase().includes(texto)
+      );
+    }
   
     renderTable(datos);
-  
-    // reactivar botón
-    btn.disabled = false;
   }
-
-  
+ 
   function renderTable(filteredData) {
     tableBody.innerHTML = "";
     if (filteredData.length === 0) {
