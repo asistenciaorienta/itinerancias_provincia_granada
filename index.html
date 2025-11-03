@@ -103,7 +103,7 @@
   
     // si no está cargado todavía -> cargamos del json local
     if (allData.length === 0) {
-      const res = await fetch("./data/itinerancias.json");
+      const res = await fetch("./itinerancias.json");
       allData = await res.json();
     }
   
