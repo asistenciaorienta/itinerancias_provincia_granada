@@ -68,8 +68,8 @@
   }
   
   .datos-scroll {
-    overflow-y: auto;
-    max-height: 70vh;  /* puedes ajustar a lo que quieras */
+    max-height: none;   /* sin tope de altura */
+    overflow: visible;  /* sin scroll interno */
   }
   
   .fila {
@@ -133,7 +133,7 @@
     <div>COLECTIVO</div>
   </div>
   <!-- CONTENEDOR DE DATOS: aquí inyectamos filas .fila y aquí hace scroll -->
-  <div id="contenedor-datos" class="datos-scroll table-container" style="box-shadow:0 2px 8px rgba(0,0,0,.08); border-radius:0 0 10px 10px; margin-top:0;">
+  <div id="contenedor-datos" class="datos-scroll" style="box-shadow:0 2px 8px rgba(0,0,0,.08); border-radius:0 0 10px 10px; margin-top:0;">
     <!-- carga inicial -->
     <div style="padding:1rem; text-align:center;">Cargando datos...</div>
   </div>
@@ -141,11 +141,10 @@
   <footer style="position: relative; text-align: center; padding: 10px;">
     © 2025 - Servicio Andaluz de Empleo. Junta de Andalucía. Servicio de Intermediación e Inserción Laboral. SAE Granada
     <button class="contacto-btn" onclick="document.getElementById('modal-contacto').style.display='flex'">Contacto</button>
-    <img src="Imagenes/vje2.png" 
+    <img src="vje2.png" 
          style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 25px;">
   </footer>
 <script>
-  const tableBody = document.querySelector('#data-table tbody');
   let allData = [];        // datos originales sin mapear
   let allDataMapped = [];  // datos ya mapeados con claves limpias
 
@@ -305,9 +304,7 @@
 
   let debounceTimer;
   function debounceBuscar() {
-    clearTimeout(debounceTimer);
-    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Cargando datos...</td></tr>`;
-    
+    clearTimeout(debounceTimer);    
     debounceTimer = setTimeout(() => {
       buscar();
     }, 300);
