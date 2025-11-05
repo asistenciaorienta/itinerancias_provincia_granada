@@ -222,6 +222,11 @@
 
   <main>
     <input type="text" id="search" placeholder="Buscar por entidad, municipio, colectivo... (filtra ambas tablas)" oninput="debounceBuscar()">
+    <div id="filtros-campos" style="display:flex; gap:1rem; justify-content:center; margin-top:0.3rem; margin-bottom:0.3rem; font-size:0.9rem;">
+      <label><input type="checkbox" id="chkEntidad" checked> Entidad</label>
+      <label><input type="checkbox" id="chkMunicipio" checked> Municipio</label>
+      <label><input type="checkbox" id="chkColectivo" checked> Colectivo</label>
+    </div>
 
     <div class="tables-wrap">
 
@@ -235,7 +240,7 @@
           <div>ENTIDAD</div>
           <div>TELÉFONO</div>
           <div>DIRECCIÓN UNIDAD</div>
-          <div>POBLACIÓN</div>
+          <div>MUNICIPIO</div>
           <div>COLECTIVO</div>
           <div>OFICINA SAE</div>
           <div>OBSERVACIONES</div>
@@ -388,8 +393,8 @@
         <div>${escapeHtml(u.direccion)}</div>
         <div>${escapeHtml(u.municipio)}</div>
         <div>${escapeHtml(u.colectivo)}</div>
-        <div>${escapeHtml(u.observaciones)}</div>
         <div>${escapeHtml(u.oficina)}</div>
+        <div>${escapeHtml(u.observaciones)}</div>
       `;
       fragment.appendChild(div);
     });
@@ -487,21 +492,24 @@
 
   function buscar() {
     const q = normalizeString(document.getElementById('search').value);
+    const fEntidad   = document.getElementById('chkEntidad').checked;
+    const fMunicipio = document.getElementById('chkMunicipio').checked;
+    const fColectivo = document.getElementById('chkColectivo').checked;
 
-    // filter Unidades (we search over entidad, municipio, colectivo, observaciones, oficina)
-    const filteredUnidades = unidadesMapped.filter(u => {
-      const cadena = normalizeString(`${u.entidad} ${u.municipio} ${u.colectivo} ${u.observaciones} ${u.oficina}`);
-      return q === "" ? true : cadena.includes(q);
-    });
-
-    // filter Itinerancias (entidad, municipio, colectivo)
-    const filteredItinerancias = itineranciasMapped.filter(r => {
-      const cadena = normalizeString(`${r.entidad} ${r.municipio} ${r.colectivo}`);
-      return q === "" ? true : cadena.includes(q);
-    });
-
-    renderUnidades(filteredUnidades);
-    renderItinerancias(filteredItinerancias);
+    function rowMatch(obj){
+      // si no hay texto → no filtra nada
+      if(q==="") return true;
+  
+      let cadena = "";
+      if(fEntidad)   cadena += " " + (obj.entidad||"");
+      if(fMunicipio) cadena += " " + (obj.municipio||"");
+      if(fColectivo) cadena += " " + (obj.colectivo||"");
+      // normalizamos
+      return normalizeString(cadena).includes(q);
+    }
+  
+    renderUnidades( unidadesMapped.filter(rowMatch) );
+    renderItinerancias( itineranciasMapped.filter(rowMatch) );
   }
 
   // ---------- modal contacto (bloquea scroll de fondo) ----------
