@@ -507,7 +507,10 @@
       if(fMunicipio) cadena += " " + (obj.municipio||"");
       if(fColectivo) cadena += " " + (obj.colectivo||"");
       // normalizamos
-      return normalizeString(cadena).includes(q);
+      const texto = normalizeString(cadena); //ignora tildes.
+      const palabras = q.split(" ").filter(w => w !== "");// todas las palabras tienen que aparecer en algún punto del texto concatenado
+  
+      return palabras.every(p => texto.includes(p));
     }
   
     renderUnidades( unidadesMapped.filter(rowMatch) );
