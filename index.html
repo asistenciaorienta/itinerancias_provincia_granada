@@ -444,57 +444,62 @@
   }
 
   // ---------- carga de JSONs (una sola vez cada uno) ----------
-  async function loadDataOnce() {
-    // show loading placeholders
-    document.getElementById('contenedor-unidades').innerHTML = `<div style="padding:1rem;text-align:center;">Cargando datos...</div>`;
-    document.getElementById('contenedor-itinerancias').innerHTML = `<div style="padding:1rem;text-align:center;">Cargando datos...</div>`;
+// ---------- carga de JSONs (una sola vez cada uno) ----------
+async function loadDataOnce() {
+  // show loading placeholders
+  document.getElementById('contenedor-unidades').innerHTML = `<div style="padding:1rem;text-align:center;">Cargando datos...</div>`;
+  document.getElementById('contenedor-itinerancias').innerHTML = `<div style="padding:1rem;text-align:center;">Cargando datos...</div>`;
 
-    try {
-      const [resU, resI] = await Promise.all([
-        fetch('./unidadesAO.json'),
-        fetch('./itinerancias.json'),
-        fetch('./municipios_oficinas.json')
-      ]);
+  try {
+    // <-- CORRECCIÓN: destructuramos las 3 respuestas aquí
+    const [resU, resI, resM] = await Promise.all([
+      fetch('./unidadesAO.json'),
+      fetch('./itinerancias.json'),
+      fetch('./municipios_oficinas.json')
+    ]);
 
-      if (!resU.ok) throw new Error('Error cargando unidadesAO.json: ' + resU.status);
-      if (!resI.ok) throw new Error('Error cargando itinerancias.json: ' + resI.status);
-      if (!resM.ok) throw new Error('Error municipios_oficinas.json: ' + resM.status);
+    if (!resU.ok) throw new Error('Error cargando unidadesAO.json: ' + resU.status);
+    if (!resI.ok) throw new Error('Error cargando itinerancias.json: ' + resI.status);
+    if (!resM.ok) throw new Error('Error cargando municipios_oficinas.json: ' + resM.status);
 
-      unidadesRaw = await resU.json();
-      itineranciasRaw = await resI.json();
-      const municipiosRaw = await resM.json();
+    unidadesRaw = await resU.json();
+    itineranciasRaw = await resI.json();
+    const municipiosRaw = await resM.json();
 
-      // mapeo
-      unidadesMapped = unidadesRaw.map(mapUnidad);
-      itineranciasMapped = itineranciasRaw.map(mapItinerancia);
-      // ----  map MUNICIPIO → OFICINA  ----
-      municipiosRaw.forEach(r=>{
-        if(r.Municipio && r["Oficina de empleo"]) {
-          mapaMunicipioOficina[ normalizeString(r.Municipio) ] = r["Oficina de empleo"];
-        }
-      });
-      
-      // ordenar itinerancias por municipio y entidad
-      itineranciasMapped.sort((a,b)=>{
-        const ma = (a.municipio || "").toLowerCase();
-        const mb = (b.municipio || "").toLowerCase();
-        if (ma === mb) {
-          return (a.entidad || "").localeCompare(b.entidad || "");
-        }
-        return ma.localeCompare(mb);
-      });
+    // mapeo
+    unidadesMapped = unidadesRaw.map(mapUnidad);
+    itineranciasMapped = itineranciasRaw.map(mapItinerancia);
 
-    } catch (err) {
-      console.error(err);
-      document.getElementById('contenedor-unidades').innerHTML = `<div class="sin-resultados">Error cargando datos</div>`;
-      document.getElementById('contenedor-itinerancias').innerHTML = `<div class="sin-resultados">Error cargando datos</div>`;
-      return;
-    }
+    // ----  map MUNICIPIO → OFICINA  ----
+    // atenció: tu JSON tenía claves "Municipio" y "Oficina de empleo" según lo que pegaste antes
+    municipiosRaw.forEach(r=>{
+      if (r.Municipio && r["Oficina de empleo"]) {
+        mapaMunicipioOficina[ normalizeString(r.Municipio) ] = r["Oficina de empleo"];
+      }
+    });
 
-    // initial render with all data
-    renderUnidades(unidadesMapped);
-    renderItinerancias(itineranciasMapped);
+    // ordenar itinerancias por municipio y entidad
+    itineranciasMapped.sort((a,b)=>{
+      const ma = (a.municipio || "").toLowerCase();
+      const mb = (b.municipio || "").toLowerCase();
+      if (ma === mb) {
+        return (a.entidad || "").localeCompare(b.entidad || "");
+      }
+      return ma.localeCompare(mb);
+    });
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('contenedor-unidades').innerHTML = `<div class="sin-resultados">Error cargando datos</div>`;
+    document.getElementById('contenedor-itinerancias').innerHTML = `<div class="sin-resultados">Error cargando datos</div>`;
+    return;
   }
+
+  // initial render with all data
+  renderUnidades(unidadesMapped);
+  renderItinerancias(itineranciasMapped);
+}
+
 
   // ---------- búsqueda / filtrado ----------
   let debounceTimer;
