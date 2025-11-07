@@ -234,6 +234,9 @@
 
       <!-- BLOQUE 1: UNIDADES AO -->
       <div>
+        <!-- 🔔 mensaje fallback -->
+        <div id="mensajeFallback" style="font-weight:bold; margin-bottom:10px;"></div>   
+        
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <div class="block-title">Unidades Andalucía Orienta</div>
         </div>
@@ -308,6 +311,7 @@
   }
 
   // ---------- variables globales ----------
+  let mapaMunicipioOficina = {};
   let unidadesRaw = [];
   let itineranciasRaw = [];
   let unidadesMapped = [];   // mapped to keys we display
@@ -448,19 +452,28 @@
     try {
       const [resU, resI] = await Promise.all([
         fetch('./unidadesAO.json'),
-        fetch('./itinerancias.json')
+        fetch('./itinerancias.json'),
+        fetch('./municipios_oficinas.json')
       ]);
 
       if (!resU.ok) throw new Error('Error cargando unidadesAO.json: ' + resU.status);
       if (!resI.ok) throw new Error('Error cargando itinerancias.json: ' + resI.status);
+      if (!resM.ok) throw new Error('Error municipios_oficinas.json: ' + resM.status);
 
       unidadesRaw = await resU.json();
       itineranciasRaw = await resI.json();
+      const municipiosRaw = await resM.json();
 
       // mapeo
       unidadesMapped = unidadesRaw.map(mapUnidad);
       itineranciasMapped = itineranciasRaw.map(mapItinerancia);
-
+      // ----  map MUNICIPIO → OFICINA  ----
+      municipiosRaw.forEach(r=>{
+        if(r.Municipio && r["Oficina de empleo"]) {
+          mapaMunicipioOficina[ normalizeString(r.Municipio) ] = r["Oficina de empleo"];
+        }
+      });
+      
       // ordenar itinerancias por municipio y entidad
       itineranciasMapped.sort((a,b)=>{
         const ma = (a.municipio || "").toLowerCase();
@@ -497,6 +510,8 @@
     const fEntidad   = document.getElementById('chkEntidad').checked;
     const fMunicipio = document.getElementById('chkMunicipio').checked;
     const fColectivo = document.getElementById('chkColectivo').checked;
+    
+    document.getElementById("mensajeFallback").innerText = "";
 
     function rowMatch(obj){
       // si no hay texto → no filtra nada
@@ -513,8 +528,47 @@
       return palabras.every(p => texto.includes(p));
     }
   
-    renderUnidades( unidadesMapped.filter(rowMatch) );
-    renderItinerancias( itineranciasMapped.filter(rowMatch) );
+    // aplico filtro normal
+    const fUn = unidadesMapped.filter(rowMatch);
+    const fIt = itineranciasMapped.filter(rowMatch);
+    
+    // --- fallback B: si 0 y 0, y hay municipio que detectemos → cargar oficina
+    if (fUn.length===0 && fIt.length===0) {
+      const palabras = q.split(" ").filter(w=>w!=="");
+      let oficinaDetectada = null;
+    
+      for (let p of palabras) {
+        if (mapaMunicipioOficina[p]) {
+          oficinaDetectada = mapaMunicipioOficina[p];
+          break;
+        }
+      }
+    
+      if (oficinaDetectada) {
+        const oficinaNorm = normalizeString(oficinaDetectada);
+    
+        // unidades ya tienen oficina
+        const fallbackUn = unidadesMapped.filter(u=> normalizeString(u.oficina)===oficinaNorm );
+    
+        // itinerancias → sacar oficinas por municipio
+        const fallbackIt = itineranciasMapped.filter(i=>{
+          const muniNorm = normalizeString(i.municipio);
+          const off = mapaMunicipioOficina[muniNorm];
+          return off && normalizeString(off)===oficinaNorm;
+        });
+        
+        document.getElementById("mensajeFallback").innerText =
+          "Sin coincidencias directas. Mostrando resultados de la oficina: " + oficinaDetectada;
+    
+        renderUnidades(fallbackUn);
+        renderItinerancias(fallbackIt);
+        return;
+      }
+    }
+    
+    // si NO hay fallback → pintar normal
+    renderUnidades(fUn);
+    renderItinerancias(fIt);
   }
 
   // ---------- modal contacto (bloquea scroll de fondo) ----------
