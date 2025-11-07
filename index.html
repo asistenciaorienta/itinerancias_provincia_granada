@@ -551,15 +551,49 @@ async function loadDataOnce() {
     
     // --- fallback B: si 0 y 0, y hay municipio que detectemos → cargar oficina
     if (fUn.length===0 && fIt.length===0) {
-      const palabras = q.split(" ").filter(w=>w!=="");
-      let oficinaDetectada = null;
+    // --- detección más robusta de municipio en la consulta (n-grams) ---
+    const palabras = q.split(" ").filter(w => w !== "");
+    let oficinaDetectada = null;
     
-      for (let p of palabras) {
-        if (mapaMunicipioOficina[p]) {
-          oficinaDetectada = mapaMunicipioOficina[p];
-          break;
+    // 1) prueba la consulta completa (ej. "moraleda de zafayona")
+    if (q && mapaMunicipioOficina[q]) {
+      oficinaDetectada = mapaMunicipioOficina[q];
+    }
+    
+    // 2) si no se encontró la cadena completa, probamos n-grams (4,3,2,1)
+    if (!oficinaDetectada && palabras.length > 0) {
+      const maxGram = Math.min(4, palabras.length); // hasta 4 palabras juntas
+      // intentamos gram de mayor a menor para priorizar coincidencias largas
+      for (let gram = maxGram; gram >= 1 && !oficinaDetectada; gram--) {
+        for (let start = 0; start + gram <= palabras.length && !oficinaDetectada; start++) {
+          const slice = palabras.slice(start, start + gram);
+          const candidate = slice.join(" "); // ya están normalizadas (q es normalizada)
+          if (mapaMunicipioOficina[candidate]) {
+            oficinaDetectada = mapaMunicipioOficina[candidate];
+            break;
+          }
         }
       }
+    }
+    
+    // 3) último recurso (opcional): si aún no hay oficina, intentar buscar si algúna clave del mapa
+    // contiene alguna de las palabras (útil si el mapa tiene "moraleda" sin "de zafayona")
+    // -- descomenta si quieres esta heurística más laxa
+    /*
+    if (!oficinaDetectada) {
+      const keys = Object.keys(mapaMunicipioOficina);
+      for (const k of keys) {
+        for (const p of palabras) {
+          if (k.includes(p)) {
+            oficinaDetectada = mapaMunicipioOficina[k];
+            break;
+          }
+        }
+        if (oficinaDetectada) break;
+      }
+    }
+    */
+
     
       if (oficinaDetectada) {
         const oficinaNorm = normalizeString(oficinaDetectada);
