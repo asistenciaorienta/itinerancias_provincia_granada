@@ -313,9 +313,9 @@
       .replace(/[\u0300-\u036f]/g,"") // quitar acentos
       .replace(/[^a-zA-Z0-9 ]/g," ")  // cualquier cosa rara a espacio
       .replace(/\s+/g," ")            // espacios múltiples a 1
+      .replace(/\(.*?\)/g,"")    // quitar paréntesis
       .trim()
       .toLowerCase();
-      .replace(/\(.*?\)/g,"")    // quitar paréntesis
   }
 
 
