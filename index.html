@@ -211,6 +211,13 @@
       .headers-fijos { text-align:left; }
       .fila { display:block; }
     }
+    #mensajeFallback {
+      font-weight: bold;
+      margin-bottom: 10px;
+      text-align:center;
+      color: F54927;
+    }
+    
   </style>
 </head>
 <body>
@@ -235,7 +242,7 @@
       <!-- BLOQUE 1: UNIDADES AO -->
       <div>
         <!-- 🔔 mensaje fallback -->
-        <div id="mensajeFallback" style="font-weight:bold; margin-bottom:10px; align: center; color:f0f;"></div>   
+        <div id="mensajeFallback"></div>   
         
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <div class="block-title">Unidades Andalucía Orienta</div>
@@ -299,16 +306,18 @@
 
 <script>
   // ---------- utilidades ----------
-  function normalizeString(s) {
-    return (s || "")
+  function normalizeString(str="") {
+    return str
       .toString()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\w\s]/gi, "")
-      .replace(/\s+/g, " ")
-      .trim();
+      .normalize("NFD")               // separar acentos
+      .replace(/[\u0300-\u036f]/g,"") // quitar acentos
+      .replace(/[^a-zA-Z0-9 ]/g," ")  // cualquier cosa rara a espacio
+      .replace(/\s+/g," ")            // espacios múltiples a 1
+      .trim()
+      .toLowerCase();
+      .replace(/\(.*?\)/g,"")    // quitar paréntesis
   }
+
 
   // ---------- variables globales ----------
   let mapaMunicipioOficina = {};
@@ -465,19 +474,22 @@ async function loadDataOnce() {
     unidadesRaw = await resU.json();
     itineranciasRaw = await resI.json();
     const municipiosRaw = await resM.json();
-
+    
     // mapeo
     unidadesMapped = unidadesRaw.map(mapUnidad);
     itineranciasMapped = itineranciasRaw.map(mapItinerancia);
-
+    
     // ----  map MUNICIPIO → OFICINA  ----
-    // atenció: tu JSON tenía claves "Municipio" y "Oficina de empleo" según lo que pegaste antes
     municipiosRaw.forEach(r=>{
-      if (r.Municipio && r["Oficina de empleo"]) {
-        mapaMunicipioOficina[ normalizeString(r.Municipio) ] = r["Oficina de empleo"];
+      // ojo: puede venir con campo "Municipio" o "municipio"
+      const muni = r.Municipio || r.municipio || "";
+      const ofi  = r["Oficina de empleo"] || r.oficina || r["Oficina"] || "";
+    
+      if (muni && ofi) {
+        mapaMunicipioOficina[ normalizeString(muni) ] = ofi;
       }
     });
-
+    
     // ordenar itinerancias por municipio y entidad
     itineranciasMapped.sort((a,b)=>{
       const ma = (a.municipio || "").toLowerCase();
