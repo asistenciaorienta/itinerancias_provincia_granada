@@ -219,6 +219,7 @@
     }
     
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header>
@@ -305,88 +306,61 @@
   </div>
 
 <script>
+  const SUPABASE_URL = "https://qqmpbedkcyadwqvwjuki.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_YY_aafdXI3UPOGijEwz8Aw_-ynTCRmQ";
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   // ---------- utilidades ----------
   function normalizeString(str="") {
     return str
       .toString()
-      .normalize("NFD")               // separar acentos
-      .replace(/[\u0300-\u036f]/g,"") // quitar acentos
-      .replace(/[^a-zA-Z0-9 ]/g," ")  // cualquier cosa rara a espacio
-      .replace(/\s+/g," ")            // espacios múltiples a 1
-      .replace(/\(.*?\)/g,"")    // quitar paréntesis
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g,"")
+      .replace(/\(.*?\)/g,"")
+      .replace(/[^a-zA-Z0-9 ]/g," ")
+      .replace(/\s+/g," ")
       .trim()
       .toLowerCase();
   }
 
+  function escapeHtml(s) {
+    if (!s && s !== 0) return "";
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'", "&#39;");
+  }
 
   // ---------- variables globales ----------
+  let convocatoriaActual = null;
   let mapaMunicipioOficina = {};
-  let unidadesRaw = [];
-  let itineranciasRaw = [];
-  let unidadesMapped = [];   // mapped to keys we display
+  let unidadesMapped = [];
   let itineranciasMapped = [];
 
-  // ---------- mapping específico para Unidades AO (según tus claves) ----------
+  // ---------- mapeos desde Supabase ----------
   function mapUnidad(row) {
-    // we expect keys: Entidad, Teléfono, Dirección Unidad, Población, Colectivo, Observaciones, Oficina SAE
     return {
-      entidad: row['Entidad'] || row['entidad'] || "",
-      telf: row['Teléfono'] || row['telefono'] || row['telf'] || "",
-      direccion: row['Dirección Unidad'] || row['Direccion Unidad'] || row['direccion'] || "",
-      municipio: row['Población'] || row['Poblacion'] || row['municipio'] || "",
-      colectivo: row['Colectivo'] || row['colectivo'] || "",
-      oficina: row['Oficina SAE'] || row['OficinaSAE'] || row['oficina sae'] || "",
-      observaciones: row['Observaciones'] || row['observaciones'] || ""
+      entidad: row.nombre || row.entidad || "",
+      telf: row.telefono || "",
+      direccion: row.direccion || "",
+      municipio: row.municipio || "",
+      colectivo: row.colectivo || "",
+      oficina: row.oficina_sae || "",
+      observaciones: row.observaciones || ""
     };
-  }
-
-  // ---------- mapping para itinerancias (reutiliza tu mapRow logic) ----------
-  // We'll write a simple pickField utility similar to before
-  function normalizeKey(k) {
-    return normalizeString(k).replace(/\s+/g, "");
-  }
-
-  const ALIAS = {
-    entidad: ["entidad", "nombreentidad", "nombre", "organizacion", "organización"],
-    municipio: ["municipio", "poblacion", "localidad"],
-    dias: ["dias", "días", "periodo", "horario"],
-    direccion: ["direccion", "dirección", "domicilio", "lugar"],
-    telf: ["telefono", "tel", "telefono citas", "teléfono", "telefono citas", "teléfono citas", "telf"],
-    tecnico: ["tecnicoorienta", "tecorienta", "tec orienta", "tecnic@ orienta", "tecnic@orienta", "tecnico", "responsable"],
-    colectivo: ["colectivo", "publico", "dirigidoa", "dirigido a"]
-  };
-
-  function pickField(row, aliasesList) {
-    const keys = Object.keys(row);
-    for (const k of keys) {
-      const nk = normalizeKey(k);
-      for (const a of aliasesList) {
-        if (nk === normalizeKey(a)) {
-          return row[k];
-        }
-      }
-    }
-    // fallback: partial match
-    for (const k of keys) {
-      const nk = normalizeKey(k);
-      for (const a of aliasesList) {
-        if (nk.includes(normalizeKey(a))) {
-          return row[k];
-        }
-      }
-    }
-    return "";
   }
 
   function mapItinerancia(row) {
     return {
-      entidad: pickField(row, ALIAS.entidad) || "",
-      municipio: pickField(row, ALIAS.municipio) || "",
-      dias: pickField(row, ALIAS.dias) || "",
-      direccion: pickField(row, ALIAS.direccion) || "",
-      telf: pickField(row, ALIAS.telf) || "",
-      tecnico: pickField(row, ALIAS.tecnico) || "",
-      colectivo: pickField(row, ALIAS.colectivo) || ""
+      entidad: row.entidad || "",
+      municipio: row.municipio || "",
+      dias: row.dias || row.horario || row.frecuencia || "",
+      direccion: row.direccion || "",
+      telf: row.telefono || "",
+      tecnico: row.tecnico_orienta || row.contacto || row.descripcion || "",
+      colectivo: row.colectivo || ""
     };
   }
 
@@ -394,11 +368,14 @@
   function renderUnidades(filtered) {
     const cont = document.getElementById('contenedor-unidades');
     cont.innerHTML = "";
+
     if (!filtered || filtered.length === 0) {
       cont.innerHTML = `<div class="sin-resultados">Sin resultados</div>`;
       return;
     }
+
     const fragment = document.createDocumentFragment();
+
     filtered.forEach(u => {
       const div = document.createElement('div');
       div.className = 'fila';
@@ -413,17 +390,21 @@
       `;
       fragment.appendChild(div);
     });
+
     cont.appendChild(fragment);
   }
 
   function renderItinerancias(filtered) {
     const cont = document.getElementById('contenedor-itinerancias');
     cont.innerHTML = "";
+
     if (!filtered || filtered.length === 0) {
       cont.innerHTML = `<div class="sin-resultados">Sin resultados</div>`;
       return;
     }
+
     const fragment = document.createDocumentFragment();
+
     filtered.forEach(r => {
       const div = document.createElement('div');
       div.className = 'fila';
@@ -438,83 +419,137 @@
       `;
       fragment.appendChild(div);
     });
+
     cont.appendChild(fragment);
   }
 
-  // escape básico para evitar inyección accidental al inyectar strings
-  function escapeHtml(s) {
-    if (!s && s !== 0) return "";
-    return String(s)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'", "&#39;");
+  // ---------- carga desde Supabase ----------
+  async function cargarConvocatoriaVisible() {
+    const { data, error } = await supabaseClient
+      .from("convocatorias_orienta")
+      .select("id,nombre,periodo,fecha_inicio,fecha_fin,estado,visible_web")
+      .eq("visible_web", true)
+      .eq("estado", "VIGENTE")
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error cargando convocatoria visible:", error);
+      throw error;
+    }
+
+    if (!data) {
+      throw new Error("No hay convocatoria visible y vigente.");
+    }
+
+    return data;
   }
 
-  // ---------- carga de JSONs (una sola vez cada uno) ----------
-// ---------- carga de JSONs (una sola vez cada uno) ----------
-async function loadDataOnce() {
-  // show loading placeholders
-  document.getElementById('contenedor-unidades').innerHTML = `<div style="padding:1rem;text-align:center;">Cargando datos...</div>`;
-  document.getElementById('contenedor-itinerancias').innerHTML = `<div style="padding:1rem;text-align:center;">Cargando datos...</div>`;
+  async function cargarUnidades(convocatoriaId) {
+    const { data, error } = await supabaseClient
+      .from("unidades")
+      .select("nombre,telefono,direccion,municipio,colectivo,oficina_sae,observaciones,activa,convocatoria_id")
+      .eq("convocatoria_id", convocatoriaId)
+      .eq("activa", true)
+      .order("municipio", { ascending: true })
+      .order("nombre", { ascending: true });
 
-  try {
-    // <-- CORRECCIÓN: destructuramos las 3 respuestas aquí
-    const [resU, resI, resM] = await Promise.all([
-      fetch('./unidadesAO.json'),
-      fetch('./itinerancias.json'),
-      fetch('./municipios_oficinas.json')
-    ]);
+    if (error) {
+      console.error("Error cargando unidades:", error);
+      throw error;
+    }
 
-    if (!resU.ok) throw new Error('Error cargando unidadesAO.json: ' + resU.status);
-    if (!resI.ok) throw new Error('Error cargando itinerancias.json: ' + resI.status);
-    if (!resM.ok) throw new Error('Error cargando municipios_oficinas.json: ' + resM.status);
-
-    unidadesRaw = await resU.json();
-    itineranciasRaw = await resI.json();
-    const municipiosRaw = await resM.json();
-    
-    // mapeo
-    unidadesMapped = unidadesRaw.map(mapUnidad);
-    itineranciasMapped = itineranciasRaw.map(mapItinerancia);
-    
-    // ----  map MUNICIPIO → OFICINA  ----
-    municipiosRaw.forEach(r=>{
-      // ojo: puede venir con campo "Municipio" o "municipio"
-      const muni = r.Municipio || r.municipio || "";
-      const ofi  = r["Oficina de empleo"] || r.oficina || r["Oficina"] || "";
-    
-      if (muni && ofi) {
-        mapaMunicipioOficina[ normalizeString(muni) ] = ofi;
-      }
-    });
-    
-    // ordenar itinerancias por municipio y entidad
-    itineranciasMapped.sort((a,b)=>{
-      const ma = (a.municipio || "").toLowerCase();
-      const mb = (b.municipio || "").toLowerCase();
-      if (ma === mb) {
-        return (a.entidad || "").localeCompare(b.entidad || "");
-      }
-      return ma.localeCompare(mb);
-    });
-
-  } catch (err) {
-    console.error(err);
-    document.getElementById('contenedor-unidades').innerHTML = `<div class="sin-resultados">Error cargando datos</div>`;
-    document.getElementById('contenedor-itinerancias').innerHTML = `<div class="sin-resultados">Error cargando datos</div>`;
-    return;
+    return data || [];
   }
 
-  // initial render with all data
-  renderUnidades(unidadesMapped);
-  renderItinerancias(itineranciasMapped);
-}
+  async function cargarItinerancias(convocatoriaId) {
+    const { data, error } = await supabaseClient
+      .from("itinerancias_publicadas")
+      .select("entidad,municipio,dias,horario,frecuencia,direccion,telefono,tecnico_orienta,contacto,descripcion,colectivo,activa,convocatoria_id")
+      .eq("convocatoria_id", convocatoriaId)
+      .eq("activa", true)
+      .order("municipio", { ascending: true })
+      .order("entidad", { ascending: true });
 
+    if (error) {
+      console.error("Error cargando itinerancias:", error);
+      throw error;
+    }
+
+    return data || [];
+  }
+
+  async function cargarMunicipiosOficinasFallback() {
+    try {
+      const resM = await fetch('./municipios_oficinas.json');
+      if (!resM.ok) return;
+
+      const municipiosRaw = await resM.json();
+
+      municipiosRaw.forEach(r => {
+        const muni = r.Municipio || r.municipio || "";
+        const ofi  = r["Oficina de empleo"] || r.oficina || r["Oficina"] || "";
+
+        if (muni && ofi) {
+          mapaMunicipioOficina[normalizeString(muni)] = ofi;
+        }
+      });
+    } catch (err) {
+      console.warn("No se pudo cargar municipios_oficinas.json. El buscador funcionará sin fallback por oficina.", err);
+    }
+  }
+
+  async function loadDataOnce() {
+    document.getElementById('contenedor-unidades').innerHTML =
+      `<div style="padding:1rem;text-align:center;">Cargando datos...</div>`;
+
+    document.getElementById('contenedor-itinerancias').innerHTML =
+      `<div style="padding:1rem;text-align:center;">Cargando datos...</div>`;
+
+    try {
+      convocatoriaActual = await cargarConvocatoriaVisible();
+
+      const titulo = document.querySelector("header h2");
+      if (titulo && convocatoriaActual.nombre) {
+        titulo.textContent = `Programa Andalucía Orienta. SAE Granada · ${convocatoriaActual.nombre}`;
+      }
+
+      const [unidades, itinerancias] = await Promise.all([
+        cargarUnidades(convocatoriaActual.id),
+        cargarItinerancias(convocatoriaActual.id),
+        cargarMunicipiosOficinasFallback()
+      ]);
+
+      unidadesMapped = unidades.map(mapUnidad);
+      itineranciasMapped = itinerancias.map(mapItinerancia);
+
+      itineranciasMapped.sort((a,b) => {
+        const ma = (a.municipio || "").toLowerCase();
+        const mb = (b.municipio || "").toLowerCase();
+
+        if (ma === mb) {
+          return (a.entidad || "").localeCompare(b.entidad || "");
+        }
+
+        return ma.localeCompare(mb);
+      });
+
+      renderUnidades(unidadesMapped);
+      renderItinerancias(itineranciasMapped);
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById('contenedor-unidades').innerHTML =
+        `<div class="sin-resultados">Error cargando datos desde Supabase</div>`;
+
+      document.getElementById('contenedor-itinerancias').innerHTML =
+        `<div class="sin-resultados">Error cargando datos desde Supabase</div>`;
+    }
+  }
 
   // ---------- búsqueda / filtrado ----------
   let debounceTimer;
+
   function debounceBuscar() {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -527,118 +562,96 @@ async function loadDataOnce() {
     const fEntidad   = document.getElementById('chkEntidad').checked;
     const fMunicipio = document.getElementById('chkMunicipio').checked;
     const fColectivo = document.getElementById('chkColectivo').checked;
-    
+
     document.getElementById("mensajeFallback").innerText = "";
 
-    function rowMatch(obj){
-      // si no hay texto → no filtra nada
-      if(q==="") return true;
-  
+    function rowMatch(obj) {
+      if (q === "") return true;
+
       let cadena = "";
-      if(fEntidad)   cadena += " " + (obj.entidad||"");
-      if(fMunicipio) cadena += " " + (obj.municipio||"");
-      if(fColectivo) cadena += " " + (obj.colectivo||"");
-      // normalizamos
-      const texto = normalizeString(cadena); //ignora tildes.
-      const palabras = q.split(" ").filter(w => w !== "");// todas las palabras tienen que aparecer en algún punto del texto concatenado
-  
+
+      if (fEntidad)   cadena += " " + (obj.entidad || "");
+      if (fMunicipio) cadena += " " + (obj.municipio || "");
+      if (fColectivo) cadena += " " + (obj.colectivo || "");
+
+      const texto = normalizeString(cadena);
+      const palabras = q.split(" ").filter(w => w !== "");
+
       return palabras.every(p => texto.includes(p));
     }
-  
-    // aplico filtro normal
+
     const fUn = unidadesMapped.filter(rowMatch);
     const fIt = itineranciasMapped.filter(rowMatch);
-    
-    // --- fallback B: si 0 y 0, y hay municipio que detectemos → cargar oficina
-    if (fUn.length===0 && fIt.length===0) {
-    // --- detección más robusta de municipio en la consulta (n-grams) ---
-    const palabras = q.split(" ").filter(w => w !== "");
-    let oficinaDetectada = null;
-    
-    // 1) prueba la consulta completa (ej. "moraleda de zafayona")
-    if (q && mapaMunicipioOficina[q]) {
-      oficinaDetectada = mapaMunicipioOficina[q];
-    }
-    
-    // 2) si no se encontró la cadena completa, probamos n-grams (4,3,2,1)
-    if (!oficinaDetectada && palabras.length > 0) {
-      const maxGram = Math.min(4, palabras.length); // hasta 4 palabras juntas
-      // intentamos gram de mayor a menor para priorizar coincidencias largas
-      for (let gram = maxGram; gram >= 1 && !oficinaDetectada; gram--) {
-        for (let start = 0; start + gram <= palabras.length && !oficinaDetectada; start++) {
-          const slice = palabras.slice(start, start + gram);
-          const candidate = slice.join(" "); // ya están normalizadas (q es normalizada)
-          if (mapaMunicipioOficina[candidate]) {
-            oficinaDetectada = mapaMunicipioOficina[candidate];
-            break;
-          }
-        }
-      }
-    }
-    
-    // 3) último recurso (opcional): si aún no hay oficina, intentar buscar si algúna clave del mapa
-    // contiene alguna de las palabras (útil si el mapa tiene "moraleda" sin "de zafayona")
-    // -- descomenta si quieres esta heurística más laxa
-    /*
-    if (!oficinaDetectada) {
-      const keys = Object.keys(mapaMunicipioOficina);
-      for (const k of keys) {
-        for (const p of palabras) {
-          if (k.includes(p)) {
-            oficinaDetectada = mapaMunicipioOficina[k];
-            break;
-          }
-        }
-        if (oficinaDetectada) break;
-      }
-    }
-    */
 
-    
+    if (fUn.length === 0 && fIt.length === 0) {
+      const palabras = q.split(" ").filter(w => w !== "");
+      let oficinaDetectada = null;
+
+      if (q && mapaMunicipioOficina[q]) {
+        oficinaDetectada = mapaMunicipioOficina[q];
+      }
+
+      if (!oficinaDetectada && palabras.length > 0) {
+        const maxGram = Math.min(4, palabras.length);
+
+        for (let gram = maxGram; gram >= 1 && !oficinaDetectada; gram--) {
+          for (let start = 0; start + gram <= palabras.length && !oficinaDetectada; start++) {
+            const candidate = palabras.slice(start, start + gram).join(" ");
+
+            if (mapaMunicipioOficina[candidate]) {
+              oficinaDetectada = mapaMunicipioOficina[candidate];
+              break;
+            }
+          }
+        }
+      }
+
       if (oficinaDetectada) {
         const oficinaNorm = normalizeString(oficinaDetectada);
-    
-        // unidades ya tienen oficina
-        const fallbackUn = unidadesMapped.filter(u=> normalizeString(u.oficina)===oficinaNorm );
-    
-        // itinerancias → sacar oficinas por municipio
-        const fallbackIt = itineranciasMapped.filter(i=>{
+
+        const fallbackUn = unidadesMapped.filter(u =>
+          normalizeString(u.oficina) === oficinaNorm
+        );
+
+        const fallbackIt = itineranciasMapped.filter(i => {
           const muniNorm = normalizeString(i.municipio);
           const off = mapaMunicipioOficina[muniNorm];
-          return off && normalizeString(off)===oficinaNorm;
+          return off && normalizeString(off) === oficinaNorm;
         });
-        
+
         document.getElementById("mensajeFallback").innerText =
           "Sin coincidencias directas. Mostrando Unidades/Itinerancias de: " + oficinaDetectada;
-    
+
         renderUnidades(fallbackUn);
         renderItinerancias(fallbackIt);
         return;
       }
     }
-    
-    // si NO hay fallback → pintar normal
+
     renderUnidades(fUn);
     renderItinerancias(fIt);
   }
 
-  // ---------- modal contacto (bloquea scroll de fondo) ----------
+  // ---------- modal contacto ----------
   function abrirModalContacto() {
     const modal = document.getElementById('modal-contacto');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     modal.setAttribute('aria-hidden','false');
   }
+
   function cerrarModalContacto() {
     const modal = document.getElementById('modal-contacto');
     modal.style.display = 'none';
     document.body.style.overflow = 'auto';
     modal.setAttribute('aria-hidden','true');
   }
-  // cerrar al click fuera
-  document.addEventListener('click', function(e){
+
+  document.addEventListener('click', function(e) {
     const modal = document.getElementById('modal-contacto');
+
     if (!modal) return;
+
     if (modal.style.display === 'flex' && e.target === modal) {
       cerrarModalContacto();
     }
