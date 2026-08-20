@@ -359,7 +359,7 @@
       dias: row.dias || row.horario || row.frecuencia || "",
       direccion: row.direccion || "",
       telf: row.telefono || "",
-      tecnico: row.tecnico_orienta || row.contacto || row.descripcion || "",
+      tecnico: row.contacto || row.tecnico_orienta || row.descripcion || "",
       colectivo: row.colectivo || ""
     };
   }
@@ -463,20 +463,120 @@
   }
 
   async function cargarItinerancias(convocatoriaId) {
-    const { data, error } = await supabaseClient
+
+    const campos =
+      "id,entidad,municipio,dias,horario,frecuencia,direccion," +
+      "telefono,tecnico_orienta,contacto,descripcion," +
+      "colectivo,activa,convocatoria_id,atemporal";
+
+    /*
+     * 1. Itinerancias de la convocatoria seleccionada.
+     *
+     * Esta consulta se mantiene independiente para que
+     * cualquier problema con las itinerancias atemporales
+     * no deje vacío el buscador completo.
+     */
+    const {
+      data: dataConvocatoria,
+      error: errorConvocatoria
+    } = await supabaseClient
       .from("itinerancias_publicadas")
-      .select("entidad,municipio,dias,horario,frecuencia,direccion,telefono,tecnico_orienta,contacto,descripcion,colectivo,activa,convocatoria_id")
+      .select(campos)
       .eq("convocatoria_id", convocatoriaId)
       .eq("activa", true)
       .order("municipio", { ascending: true })
       .order("entidad", { ascending: true });
 
-    if (error) {
-      console.error("Error cargando itinerancias:", error);
-      throw error;
+    if (errorConvocatoria) {
+      console.error(
+        "Error cargando itinerancias de convocatoria:",
+        errorConvocatoria
+      );
+
+      throw errorConvocatoria;
     }
 
-    return data || [];
+    /*
+     * 2. Itinerancias atemporales.
+     *
+     * Entre ellas están las itinerancias propias del SAE.
+     */
+    const {
+      data: dataAtemporales,
+      error: errorAtemporales
+    } = await supabaseClient
+      .from("itinerancias_publicadas")
+      .select(campos)
+      .eq("atemporal", true)
+      .eq("activa", true)
+      .order("municipio", { ascending: true })
+      .order("entidad", { ascending: true });
+
+    if (errorAtemporales) {
+      /*
+       * No dejamos vacío el buscador si falla únicamente
+       * la consulta complementaria de atemporales.
+       */
+      console.error(
+        "Error cargando itinerancias atemporales:",
+        errorAtemporales
+      );
+
+      return dataConvocatoria || [];
+    }
+
+    /*
+     * 3. Unir ambos conjuntos eliminando posibles
+     * duplicados por id.
+     */
+    const mapa = new Map();
+
+    for (const row of [
+      ...(dataConvocatoria || []),
+      ...(dataAtemporales || [])
+    ]) {
+      const clave =
+        row.id ||
+        [
+          row.entidad,
+          row.municipio,
+          row.direccion
+        ].join("|");
+
+      mapa.set(clave, row);
+    }
+
+    const resultado =
+      Array.from(mapa.values());
+
+    resultado.sort((a, b) => {
+
+      const municipioA =
+        String(a.municipio || "");
+
+      const municipioB =
+        String(b.municipio || "");
+
+      const porMunicipio =
+        municipioA.localeCompare(
+          municipioB,
+          "es",
+          { sensitivity: "base" }
+        );
+
+      if (porMunicipio !== 0) {
+        return porMunicipio;
+      }
+
+      return String(a.entidad || "")
+        .localeCompare(
+          String(b.entidad || ""),
+          "es",
+          { sensitivity: "base" }
+        );
+    });
+
+    return resultado;
   }
 
   async function cargarMunicipiosOficinasFallback() {
