@@ -211,6 +211,42 @@
       .headers-fijos { text-align:left; }
       .fila { display:block; }
     }
+    #oficinaReferencia {
+      display: none;
+      margin-bottom: 12px;
+      padding: 12px 16px;
+      text-align: center;
+      background: #f5faf7;
+      border: 1px solid #cfe1d8;
+      border-left: 5px solid #007a53;
+      border-radius: 8px;
+    }
+
+    #oficinaReferencia .titulo-oficina {
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #4a4a4a;
+      margin-bottom: 4px;
+    }
+
+    #oficinaReferenciaNombre {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #007a53;
+    }
+
+    #oficinaReferencia .dato-oficina {
+      margin-top: 4px;
+      font-size: 0.95rem;
+      color: #333;
+      line-height: 1.4;
+    }
+
+    #oficinaReferenciaCorreo {
+      word-break: break-word;
+    }
+
     #mensajeFallback {
       font-weight: bold;
       margin-bottom: 10px;
@@ -231,7 +267,15 @@
 </header>
 
   <main>
-    <input type="text" id="search" placeholder="Buscar por entidad, municipio, colectivo... (filtra ambas tablas)" oninput="debounceBuscar()">
+    <input
+      type="text"
+      id="search"
+      list="listaMunicipios"
+      autocomplete="off"
+      placeholder="Buscar por entidad, municipio, colectivo... (filtra ambas tablas)"
+      oninput="debounceBuscar()"
+    >
+    <datalist id="listaMunicipios"></datalist>
     <div id="filtros-campos" style="display:flex; gap:1rem; justify-content:center; margin-top:0.3rem; margin-bottom:0.3rem; font-size:0.9rem;">
       <label><input type="checkbox" id="chkEntidad" checked> Entidad</label>
       <label><input type="checkbox" id="chkMunicipio" checked> Municipio</label>
@@ -242,6 +286,15 @@
 
       <!-- BLOQUE 1: UNIDADES AO -->
       <div>
+        <!-- Oficina SAE de referencia -->
+        <div id="oficinaReferencia">
+          <div class="titulo-oficina">Oficina SAE de referencia</div>
+          <div id="oficinaReferenciaNombre"></div>
+          <div id="oficinaReferenciaDireccion" class="dato-oficina"></div>
+          <div id="oficinaReferenciaTelefono" class="dato-oficina"></div>
+          <div id="oficinaReferenciaCorreo" class="dato-oficina"></div>
+        </div>
+
         <!-- 🔔 mensaje fallback -->
         <div id="mensajeFallback"></div>   
         
@@ -336,6 +389,8 @@
   // ---------- variables globales ----------
   let convocatoriaActual = null;
   let mapaMunicipioOficina = {};
+  let mapaDatosOficinas = {};
+  let municipiosDisponibles = [];
   let unidadesMapped = [];
   let itineranciasMapped = [];
 
@@ -579,7 +634,44 @@
     return resultado;
   }
 
+  async function cargarDatosOficinasSAE() {
+    mapaDatosOficinas = {};
+
+    try {
+      const respuesta = await fetch(
+        "./oficinas_sae.json?v=" + Date.now()
+      );
+
+      if (!respuesta.ok) {
+        throw new Error("HTTP " + respuesta.status);
+      }
+
+      const oficinas = await respuesta.json();
+
+      oficinas.forEach(row => {
+        if (!row.nombre) return;
+
+        mapaDatosOficinas[
+          normalizeString(row.nombre)
+        ] = {
+          nombre: row.nombre || "",
+          direccion: row.direccion || "",
+          telefono: row.telefono || "",
+          correo: row.correo || ""
+        };
+      });
+
+    } catch (error) {
+      console.warn(
+        "No se pudieron cargar los datos de las oficinas SAE.",
+        error
+      );
+    }
+  }
+
+
   async function cargarMunicipiosOficinasFallback() {
+    municipiosDisponibles = [];
     try {
       const resM = await fetch('./municipios_oficinas.json');
       if (!resM.ok) return;
@@ -592,8 +684,35 @@
 
         if (muni && ofi) {
           mapaMunicipioOficina[normalizeString(muni)] = ofi;
+          municipiosDisponibles.push(String(muni).trim());
         }
       });
+
+      municipiosDisponibles = [
+        ...new Set(municipiosDisponibles)
+      ].sort((a, b) =>
+        a.localeCompare(
+          b,
+          "es",
+          { sensitivity: "base" }
+        )
+      );
+
+      const listaMunicipios =
+        document.getElementById("listaMunicipios");
+
+      if (listaMunicipios) {
+        listaMunicipios.innerHTML = "";
+
+        municipiosDisponibles.forEach(municipio => {
+          const option =
+            document.createElement("option");
+
+          option.value = municipio;
+
+          listaMunicipios.appendChild(option);
+        });
+      }
     } catch (err) {
       console.warn("No se pudo cargar municipios_oficinas.json. El buscador funcionará sin fallback por oficina.", err);
     }
@@ -617,7 +736,8 @@
       const [unidades, itinerancias] = await Promise.all([
         cargarUnidades(convocatoriaActual.id),
         cargarItinerancias(convocatoriaActual.id),
-        cargarMunicipiosOficinasFallback()
+        cargarMunicipiosOficinasFallback(),
+        cargarDatosOficinasSAE()
       ]);
 
       unidadesMapped = unidades.map(mapUnidad);
@@ -657,6 +777,102 @@
     }, 300);
   }
 
+  function resolverMunicipioBuscado(q) {
+    if (!q) return null;
+
+    // Coincidencia exacta
+    if (mapaMunicipioOficina[q]) {
+      return {
+        municipio: q,
+        oficina: mapaMunicipioOficina[q]
+      };
+    }
+
+    // Coincidencia parcial única:
+    // "cenes" -> "CENES DE LA VEGA"
+    // "moraleda" -> "MORALEDA DE ZAFAYONA"
+    const coincidencias =
+      Object.keys(mapaMunicipioOficina).filter(
+        municipioNorm =>
+          municipioNorm.includes(q)
+      );
+
+    if (coincidencias.length === 1) {
+      return {
+        municipio: coincidencias[0],
+        oficina:
+          mapaMunicipioOficina[
+            coincidencias[0]
+          ]
+      };
+    }
+
+    return null;
+  }
+
+
+  function ocultarOficinaReferencia() {
+    document.getElementById(
+      "oficinaReferencia"
+    ).style.display = "none";
+
+    document.getElementById(
+      "oficinaReferenciaNombre"
+    ).innerText = "";
+
+    document.getElementById(
+      "oficinaReferenciaDireccion"
+    ).innerText = "";
+
+    document.getElementById(
+      "oficinaReferenciaTelefono"
+    ).innerText = "";
+
+    document.getElementById(
+      "oficinaReferenciaCorreo"
+    ).innerText = "";
+  }
+
+
+  function mostrarOficinaReferencia(oficina) {
+    if (!oficina) return;
+
+    const datos =
+      mapaDatosOficinas[
+        normalizeString(oficina)
+      ];
+
+    document.getElementById(
+      "oficinaReferenciaNombre"
+    ).innerText = oficina;
+
+    document.getElementById(
+      "oficinaReferenciaDireccion"
+    ).innerText =
+      datos && datos.direccion
+        ? "📍 " + datos.direccion
+        : "";
+
+    document.getElementById(
+      "oficinaReferenciaTelefono"
+    ).innerText =
+      datos && datos.telefono
+        ? "☎ " + datos.telefono
+        : "";
+
+    document.getElementById(
+      "oficinaReferenciaCorreo"
+    ).innerText =
+      datos && datos.correo
+        ? "✉ " + datos.correo
+        : "";
+
+    document.getElementById(
+      "oficinaReferencia"
+    ).style.display = "block";
+  }
+
+
   function buscar() {
     const q = normalizeString(document.getElementById('search').value);
     const fEntidad   = document.getElementById('chkEntidad').checked;
@@ -664,6 +880,19 @@
     const fColectivo = document.getElementById('chkColectivo').checked;
 
     document.getElementById("mensajeFallback").innerText = "";
+
+    ocultarOficinaReferencia();
+
+    const municipioResuelto =
+      fMunicipio
+        ? resolverMunicipioBuscado(q)
+        : null;
+
+    if (municipioResuelto) {
+      mostrarOficinaReferencia(
+        municipioResuelto.oficina
+      );
+    }
 
     function rowMatch(obj) {
       if (q === "") return true;
@@ -685,7 +914,10 @@
 
     if (fUn.length === 0 && fIt.length === 0) {
       const palabras = q.split(" ").filter(w => w !== "");
-      let oficinaDetectada = null;
+      let oficinaDetectada =
+        municipioResuelto
+          ? municipioResuelto.oficina
+          : null;
 
       if (q && mapaMunicipioOficina[q]) {
         oficinaDetectada = mapaMunicipioOficina[q];
@@ -718,6 +950,10 @@
           const off = mapaMunicipioOficina[muniNorm];
           return off && normalizeString(off) === oficinaNorm;
         });
+
+        mostrarOficinaReferencia(
+          oficinaDetectada
+        );
 
         document.getElementById("mensajeFallback").innerText =
           "Sin coincidencias directas. Mostrando Unidades/Itinerancias de: " + oficinaDetectada;

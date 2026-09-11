@@ -1,0 +1,134 @@
+[
+  {
+    "nombre": "CENTRO DE EMPLEO ARMILLA",
+    "direccion": "Camino del Jueves, s/n · 18100 Armilla",
+    "telefono": "958 943 050",
+    "correo": "armilla.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "CENTRO DE EMPLEO BAZA",
+    "direccion": "C/ Maestro Alonso, s/n · 18800 Baza",
+    "telefono": "858 103 171",
+    "correo": "baza.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "CENTRO DE EMPLEO DÚRCAL",
+    "direccion": "C/ San José, 52 · 18650 Dúrcal",
+    "telefono": "958 986 002",
+    "correo": "durcal.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "CENTRO DE EMPLEO GRANADA-CARTUJA",
+    "direccion": "C/ Curro Cúchares, 11 · 18014 Granada",
+    "telefono": "958 943 069",
+    "correo": "granada-cartuja.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "CENTRO DE EMPLEO GRANADA-CENTRO",
+    "direccion": "C/ Santa Bárbara, 18 · 18001 Granada",
+    "telefono": "958 943 028",
+    "correo": "granada-centro.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "CENTRO DE EMPLEO GRANADA-ZAIDÍN",
+    "direccion": "C/ Sos del Rey Católico, 3 · 18006 Granada",
+    "telefono": "958 943 025",
+    "correo": "granada-zaidin.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "CENTRO DE EMPLEO GUADIX",
+    "direccion": "C/ Santa María del Buen Aire, 9 · 18500 Guadix",
+    "telefono": "958 984 011",
+    "correo": "guadix.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "CENTRO DE EMPLEO IZNALLOZ",
+    "direccion": "Carretera de la Sierra, s/n · 18550 Iznalloz",
+    "telefono": "958 985 005",
+    "correo": "iznalloz.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "CENTRO DE EMPLEO LOJA",
+    "direccion": "Avda. de los Ángeles, 25 · 18300 Loja",
+    "telefono": "958 987 012",
+    "correo": "loja.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "CENTRO DE EMPLEO MOTRIL",
+    "direccion": "C/ Plasencia, 1 · 18600 Motril",
+    "telefono": "958 989 019",
+    "correo": "motril.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "CENTRO DE EMPLEO ÓRGIVA",
+    "direccion": "C/ Lora Tamayo, 17 · 18400 Órgiva",
+    "telefono": "958 986 011",
+    "correo": "orgiva.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "CENTRO DE EMPLEO SANTA FE",
+    "direccion": "C/ Pablo Iglesias, s/n · 18320 Santa Fe",
+    "telefono": "958 059 436",
+    "correo": "santafe.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "OFICINA DE EMPLEO ALBUÑOL",
+    "direccion": "C/ 28 de Febrero, s/n · 18700 Albuñol",
+    "telefono": "858 109 782",
+    "correo": "albunol.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "OFICINA DE EMPLEO ALHAMA DE GRANADA",
+    "direccion": "Cuesta del Matadero, 1 · 18120 Alhama de Granada",
+    "telefono": "958 101 006",
+    "correo": "alhamadegranada.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "OFICINA DE EMPLEO ALMUÑÉCAR",
+    "direccion": "Callejón del Virgo, s/n · 18690 Almuñécar",
+    "telefono": "958 947 008",
+    "correo": "almunecar.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "OFICINA DE EMPLEO ALQUIFE",
+    "direccion": "C/ Hermenegildo, 3 · 18518 Alquife",
+    "telefono": "958 105 063",
+    "correo": "alquife.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "OFICINA DE EMPLEO GRANADA-CERCANÍAS",
+    "direccion": "C/ Faisán, 2 · 18014 Granada",
+    "telefono": "958 943 039",
+    "correo": "granada-cercanias.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "OFICINA DE EMPLEO GRANADA-FUENTENUEVA",
+    "direccion": "Plaza Sor Cristina de la Cruz de Arteaga, s/n · 18001 Granada",
+    "telefono": "958 943 034",
+    "correo": "granada-fuentenueva.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "OFICINA DE EMPLEO HUÉSCAR",
+    "direccion": "C/ Mayor, 2 · 18830 Huéscar",
+    "telefono": "958 104 019",
+    "correo": "huescar.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "OFICINA DE EMPLEO MONTEFRÍO",
+    "direccion": "C/ Miguel Servet, 1 · 18270 Montefrío",
+    "telefono": "958 108 387",
+    "correo": "montefrio.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "OFICINA DE EMPLEO PINOS PUENTE",
+    "direccion": "C/ Huertos, 18 · 18240 Pinos Puente",
+    "telefono": "958 100 929",
+    "correo": "pinospuente.sae@juntadeandalucia.es"
+  },
+  {
+    "nombre": "OFICINA DE EMPLEO UGIJAR",
+    "direccion": "C/ Hermanos Sánchez Velayos, s/n · 18480 Ugíjar",
+    "telefono": "958 103 111",
+    "correo": "ugijar.sae@juntadeandalucia.es"
+  }
+]
